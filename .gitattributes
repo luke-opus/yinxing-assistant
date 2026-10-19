@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.jar binary
+third_party/ltt/** -text
+third_party/gkd-subscriptions/** -text
+gkd-app/src/main/assets/xadskip/community/** -text

@@ -1,0 +1,67 @@
+{
+  "gkd": {
+    "url": "https://github.com/gkd-kit/gkd",
+    "commit": "f6c42e2f0a8926df295d33f6f086748424dc3111",
+    "archiveSha256": "e2ecadf8e1e19308a0914a1d8447b884c5ba73ee859756380b56f2e92301e502",
+    "license": "GPL-3.0-only",
+    "importMethod": "Official codeload source archive, no original Git history imported"
+  },
+  "lttRules": {
+    "url": "https://github.com/xue-mark/BACKUP-LiTiaotiao-Custom-Rules",
+    "commit": "27320e66e455cd7317afe59af31a8978d2c4e66d",
+    "license": "AGPL-3.0 (see third_party/ltt/LICENSE)",
+    "files": {
+      "AppList.md": "a2a1883c48ea880a20dfd7af1387a54ad9f3544ba8b59fb319b11751c42564f6",
+      "BasicRules.json": "deec07c4ddfaf50dd57fd35825ba9f4cd03448cb778a7be030eb75677e1cf71b",
+      "LICENSE": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef",
+      "README.md": "6cc1cdad0d5a7e68479aca366f5ea8a06576342b1c7e13bafb52eda9202d702d",
+      "Template.md": "447632fa5d366bf6dd0b81004e6eff0363fa8f5dac078bd75a423215446822f0"
+    }
+  },
+  "gkdSubscriptions": {
+    "ganlinte": {
+      "url": "https://github.com/ganlinte/GKD-subscription",
+      "branch": "main",
+      "commit": "27c1178fdd9e3601b281680037a83c8167352808",
+      "commitDate": "2026-06-24T01:15:56Z",
+      "archiveUrl": "https://codeload.github.com/ganlinte/GKD-subscription/zip/27c1178fdd9e3601b281680037a83c8167352808",
+      "archiveSha256": "7c7d749a055d4a6c79459edfd175e5fec2a539e7bbbe3b0eb16917ad6ffef2eb",
+      "license": "MIT",
+      "path": "third_party/gkd-subscriptions/ganlinte",
+      "subscriptionFile": "third_party/gkd-subscriptions/ganlinte/dist/ganlin_gkd.json5",
+      "subscriptionId": 233,
+      "subscriptionVersion": 71,
+      "apps": 610,
+      "appGroups": 1389,
+      "globalGroups": 3,
+      "fileCount": 643,
+      "fileManifest": "rules/community-snapshots.json",
+      "importMethod": "Complete unmodified codeload source snapshot; no upstream Git history imported",
+      "appIntegration": "Bundled since 0.2.0-dev; explicit offline import with separate ID; subscription and network updates disabled by default",
+      "importedSubscriptionId": 2026091302,
+      "bundledAsset": "gkd-app/src/main/assets/xadskip/community/ganlinte/ganlin_gkd.json5"
+    },
+    "aoguai": {
+      "url": "https://github.com/aoguai/subscription",
+      "branch": "custom",
+      "commit": "4aa9643406e3fd58bd689fe9daab64fcbcf82bfe",
+      "commitDate": "2026-08-09T10:48:53Z",
+      "archiveUrl": "https://codeload.github.com/aoguai/subscription/zip/4aa9643406e3fd58bd689fe9daab64fcbcf82bfe",
+      "archiveSha256": "cf6951f1c3256509a7e127ba08538c5508a12ec21ba5d809aecaf46f593ebea6",
+      "license": "GPL-3.0-only",
+      "path": "third_party/gkd-subscriptions/aoguai",
+      "subscriptionFile": "third_party/gkd-subscriptions/aoguai/dist/aoguai_gkd.json5",
+      "subscriptionId": 86,
+      "subscriptionVersion": 88,
+      "apps": 72,
+      "appGroups": 285,
+      "globalGroups": 9,
+      "fileCount": 105,
+      "fileManifest": "rules/community-snapshots.json",
+      "importMethod": "Complete unmodified codeload source snapshot; no upstream Git history imported",
+      "appIntegration": "Bundled since 0.2.0-dev; explicit offline import with separate ID; subscription and network updates disabled by default",
+      "importedSubscriptionId": 2026091303,
+      "bundledAsset": "gkd-app/src/main/assets/xadskip/community/aoguai/aoguai_gkd.json5"
+    }
+  }
+}

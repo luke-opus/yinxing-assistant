@@ -1,0 +1,814 @@
+{
+  "inputEntries": 326,
+  "convertedRules": 692,
+  "skipped": [
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.immomo.vchat",
+      "index": 3,
+      "rule": {
+        "id": "及时获取&消息",
+        "action": "取消"
+      }
+    },
+    {
+      "reason": "unsupported_app_options:click_way_popup",
+      "package": "com.rumtel.pandatv",
+      "hash": "-330301876"
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.kugou.fanxing",
+      "index": 1,
+      "rule": {
+        "id": "限时&星币购买",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.kugou.fanxing",
+      "index": 3,
+      "rule": {
+        "id": "推送通知&开启",
+        "action": "dhf"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.ximalaya.ting.android",
+      "index": 8,
+      "rule": {
+        "id": "立即抽奖",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.coolapk.market",
+      "index": 3,
+      "rule": {
+        "id": "不感兴趣&举报广告",
+        "action": "=不感兴趣"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.qiyi.video",
+      "index": 0,
+      "rule": {
+        "id": "恭喜获得&红包",
+        "action": "unused_res_a"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.qiyi.video",
+      "index": 1,
+      "rule": {
+        "id": "狠心离开&去看看",
+        "action": "狠心离开"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.daliao.live.show",
+      "index": 2,
+      "rule": {
+        "id": "打开&推送通知",
+        "action": "以后再说"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.caing.news",
+      "index": 0,
+      "rule": {
+        "id": "允许&推送通知",
+        "action": "取消"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.duowan.kiwi",
+      "index": 2,
+      "rule": {
+        "id": "push_popup_sec_txt",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.xingin.xhs",
+      "index": 0,
+      "rule": {
+        "id": "发现新版本",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.xingin.xhs",
+      "index": 1,
+      "rule": {
+        "id": "送你&新人购物券",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "io.iftech.android.box",
+      "index": 2,
+      "rule": {
+        "id": "开通会员&特惠",
+        "action": "ivClose"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.ss.android.article.video",
+      "index": 2,
+      "rule": {
+        "id": "添加桌面小组件",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.greenpoint.android.mc10086.activity",
+      "index": 1,
+      "rule": {
+        "id": "获取&剪切板",
+        "action": "不允许"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.sankuai.meituan",
+      "index": 2,
+      "rule": {
+        "id": "订单已满&优惠换购",
+        "action": "放弃机会"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.sankuai.meituan",
+      "index": 3,
+      "rule": {
+        "id": "恭喜你获得以下权益",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.sina.weibo",
+      "index": 5,
+      "rule": {
+        "id": "不感兴趣&为何会看到此广告",
+        "action": "不感兴趣"
+      }
+    },
+    {
+      "reason": "duplicate_rule",
+      "package": "com.sina.weibo",
+      "index": 6,
+      "rule": {
+        "id": "tv_tips",
+        "action": "iv_close_icon"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.sina.weibo",
+      "index": 7,
+      "rule": {
+        "id": "不感兴趣&屏蔽此博主",
+        "action": "不感兴趣"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.sina.weibo",
+      "index": 11,
+      "rule": {
+        "id": "点击签到",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.sina.weibo",
+      "index": 14,
+      "rule": {
+        "id": "不感兴趣&内容质量差",
+        "action": "不感兴趣"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.sina.weibo",
+      "index": 15,
+      "rule": {
+        "id": "错过了&爆词&查看详情",
+        "action": "mIvRight"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.baidu.haokan",
+      "index": 0,
+      "rule": {
+        "id": "发现&新版本&立即升级",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.ss.android.ugc.aweme.lite",
+      "index": 5,
+      "rule": {
+        "id": "资料完善度&继续完善",
+        "action": "关闭"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.mm.android.lc",
+      "index": 0,
+      "rule": {
+        "id": "开启&终端管理",
+        "action": "暂不开启"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.tencent.weishi",
+      "index": 0,
+      "rule": {
+        "id": "立即更新",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.taobao.idlefish",
+      "index": 0,
+      "rule": {
+        "id": "有新版本&升级",
+        "action": "暂不升级"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.kugou.fanxing.lite",
+      "index": 2,
+      "rule": {
+        "id": "关注Ta",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.vipkid.app",
+      "index": 2,
+      "rule": {
+        "id": "去&应用市场&评价",
+        "action": "取消"
+      }
+    },
+    {
+      "reason": "repeat_or_wait_rule_requires_manual_review",
+      "package": "com.hose.ekuaibao",
+      "index": 0,
+      "rule": {
+        "id": "不感兴趣",
+        "action": "不感兴趣",
+        "times": 5
+      }
+    },
+    {
+      "reason": "unsupported_app_options:click_way_popup",
+      "package": "air.tv.douyu.android",
+      "hash": "-1667428321"
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.tencent.mm",
+      "index": 1,
+      "rule": {
+        "id": "dislike&feedbackBtn",
+        "action": "不感兴趣"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.tencent.mm",
+      "index": 2,
+      "rule": {
+        "id": "isdismatch&isduplicate&isbadad",
+        "action": "与我无关"
+      }
+    },
+    {
+      "reason": "unsupported_app_options:click_way_popup",
+      "package": "com.comic.cartoon36",
+      "hash": "-1869705199"
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.lemon.lv",
+      "index": 1,
+      "rule": {
+        "id": "GuideModalConfirmBtn",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "cn.lingwoyun.cpc",
+      "index": 0,
+      "rule": {
+        "id": "新人专属月卡",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.pupumall.customer",
+      "index": 0,
+      "rule": {
+        "id": "确认加购",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.ss.android.ugc.live",
+      "index": 5,
+      "rule": {
+        "id": "资料完善度&继续完善",
+        "action": "关闭"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.sina.weibolite",
+      "index": 0,
+      "rule": {
+        "id": "极速版小助理&求关注",
+        "action": "拒绝"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "cn.kuwo.player",
+      "index": 1,
+      "rule": {
+        "id": "正在试听，完整播放需要开通VIP",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.UCMobile",
+      "index": 0,
+      "rule": {
+        "id": "开启消息通知",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.moji.mjweather",
+      "index": 0,
+      "rule": {
+        "id": "开始发图",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "cn.xiaochuankeji.zuiyouLite",
+      "index": 4,
+      "rule": {
+        "id": "swiper_list",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.kugou.android.ringtone",
+      "index": 2,
+      "rule": {
+        "id": "不感兴趣&无法关闭&举报广告",
+        "action": "不感兴趣"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.yipiao",
+      "index": 0,
+      "rule": {
+        "id": "V&立即升级",
+        "action": "arg"
+      }
+    },
+    {
+      "reason": "repeat_or_wait_rule_requires_manual_review",
+      "package": "com.shenyuan.militarynews",
+      "index": 0,
+      "rule": {
+        "id": "item_channel_item_title",
+        "action": "item_channel_item_close",
+        "times": 5
+      }
+    },
+    {
+      "reason": "repeat_or_wait_rule_requires_manual_review",
+      "package": "com.shenyuan.militarynews",
+      "index": 1,
+      "rule": {
+        "id": "item_channel_item_image_layout",
+        "action": "item_channel_item_close",
+        "times": 5
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.alibaba.wireless",
+      "index": 0,
+      "rule": {
+        "id": "update_title",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.hipu.yidian",
+      "index": 0,
+      "rule": {
+        "id": "开启通知服务",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.hipu.yidian",
+      "index": 1,
+      "rule": {
+        "id": "明日来领&金币",
+        "action": "我知道了"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.cssq.pandaplayet",
+      "index": 0,
+      "rule": {
+        "id": "看视频领取&会员权益",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.nowcasting.activity",
+      "index": 2,
+      "rule": {
+        "id": "完善资料领&VIP",
+        "action": "iv_close"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.baidu.wenku",
+      "index": 2,
+      "rule": {
+        "id": "百度文库&评分",
+        "action": "score_close"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.baidu.wenku",
+      "index": 4,
+      "rule": {
+        "id": "limit-red-packet-img-title",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.baidu.wenku",
+      "index": 5,
+      "rule": {
+        "id": "read_gif_iv",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.duolingo",
+      "index": 1,
+      "rule": {
+        "id": "关注&公众号",
+        "action": "残忍拒绝"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.jingyao.easybike",
+      "index": 0,
+      "rule": {
+        "id": "单车&天骑&单&立即领取",
+        "action": "actionDialogClose"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "android.zhibo8",
+      "index": 1,
+      "rule": {
+        "id": "开启&通知",
+        "action": "暂不开启"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.xunmeng.pinduoduo",
+      "index": 0,
+      "rule": {
+        "id": "新版本&升级",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.xunmeng.pinduoduo",
+      "index": 3,
+      "rule": {
+        "id": "专属现金红包",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.xunmeng.pinduoduo",
+      "index": 4,
+      "rule": {
+        "id": "每日签到得现金",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.xunmeng.pinduoduo",
+      "index": 5,
+      "rule": {
+        "id": "满&元可用&优惠券",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.xunmeng.pinduoduo",
+      "index": 6,
+      "rule": {
+        "id": "你的专属&福利",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.baidu.browser.apps",
+      "index": 0,
+      "rule": {
+        "id": "立即提现",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.yiche.autoeasy",
+      "index": 1,
+      "rule": {
+        "id": "签到&天&获得&车币",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.chinamobile.mcloud",
+      "index": 1,
+      "rule": {
+        "id": "开启&通知",
+        "action": "不要福利"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.qidian.QDReader",
+      "index": 3,
+      "rule": {
+        "id": "参加新人活动&免费领点币",
+        "action": "ivClose"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.qidian.QDReader",
+      "index": 7,
+      "rule": {
+        "id": "签到成功&获得&章节卡碎片",
+        "action": "fClose"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.qidian.QDReader",
+      "index": 8,
+      "rule": {
+        "id": "签到&天",
+        "action": "fClose"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.youdao.course",
+      "index": 4,
+      "rule": {
+        "id": "popWindowPic",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "repeat_or_wait_rule_requires_manual_review",
+      "package": "com.shizhuang.duapp",
+      "index": 4,
+      "rule": {
+        "id": "你可能感兴趣的人",
+        "action": "ivRemove",
+        "times": 5
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.cfitcxwl.kdyutbu",
+      "index": 2,
+      "rule": {
+        "id": "不感兴趣&举报广告",
+        "action": "不感兴趣"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.xs.fm.lite",
+      "index": 0,
+      "rule": {
+        "id": "日&必得&金币",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.tencent.qqmusic",
+      "index": 1,
+      "rule": {
+        "id": "抢先体验&不再提醒",
+        "action": "不再提醒"
+      }
+    },
+    {
+      "reason": "unsupported_app_options:click_way_popup",
+      "package": "com.nero.swiftlink.mirror",
+      "hash": "-379148275"
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.tencent.edu",
+      "index": 0,
+      "rule": {
+        "id": "允许&发送通知",
+        "action": "以后再说"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "cmb.pb",
+      "index": 0,
+      "rule": {
+        "id": "定位服务&开启",
+        "action": "关闭"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.sdu.didi.psnger",
+      "index": 2,
+      "rule": {
+        "id": "共享&广告标识",
+        "action": "不允许"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.baidu.searchbox.senior",
+      "index": 0,
+      "rule": {
+        "id": "授权&位置信息",
+        "action": "关闭"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.ss.android.article.search",
+      "index": 0,
+      "rule": {
+        "id": "收到&现金红包",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.xs.fm",
+      "index": 0,
+      "rule": {
+        "id": "新人&见面礼",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "unsupported_app_options:click_way_popup,search_times_popup",
+      "package": "com.tencent.qqpimsecure",
+      "hash": "-245593387"
+    },
+    {
+      "reason": "unsupported_app_options:times",
+      "package": "com.tencent.map",
+      "hash": "-103524794"
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.kugou.android.ktvapp",
+      "index": 3,
+      "rule": {
+        "id": "不&错过重要消息",
+        "action": "fmk"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "cn.etouch.ecalendar",
+      "index": 0,
+      "rule": {
+        "id": "开启位置权限",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "cn.neoclub.uki",
+      "index": 0,
+      "rule": {
+        "id": "版本更新",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "global_action_requires_manual_review",
+      "package": "com.tencent.karaoke",
+      "index": 0,
+      "rule": {
+        "id": "签到领取奖励",
+        "action": "GLOBAL_ACTION_BACK"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.tencent.karaoke",
+      "index": 2,
+      "rule": {
+        "id": "推送通知&开启",
+        "action": "apt"
+      }
+    },
+    {
+      "reason": "compound_matcher_requires_node_semantics_review",
+      "package": "com.douban.frodo",
+      "index": 2,
+      "rule": {
+        "id": "不感兴趣&投诉",
+        "action": "不感兴趣"
+      }
+    }
+  ],
+  "mappingAssumptions": [
+    "Full resource IDs use id equality; underscore identifiers use vid equality.",
+    "Other matchers use text or desc with documented contains/prefix/suffix/equality operators.",
+    "All generated groups remain disabled until reviewed on a real device.",
+    "GKD timing and match lifetime differ from LiTiaotiao; no equivalence is claimed."
+  ],
+  "convertedApps": 304,
+  "skippedItems": 91,
+  "inputSha256": "deec07c4ddfaf50dd57fd35825ba9f4cd03448cb778a7be030eb75677e1cf71b"
+}

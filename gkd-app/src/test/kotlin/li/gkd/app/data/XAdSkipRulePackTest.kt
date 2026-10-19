@@ -1,0 +1,110 @@
+package li.gkd.app.data
+
+import java.io.File
+import li.gkd.db.LOCAL_SUBS_ID
+import li.gkd.db.SubsItem
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class XAdSkipRulePackTest {
+    private fun source(pack: XAdSkipRulePack.Community) =
+        File("src/main/assets/${pack.assetPath}").readText()
+
+    @Test
+    fun newInstallationReceivesAnEnabledOfflineSubscription() {
+        val imported = requireNotNull(
+            XAdSkipRulePack.prepareFirstRunImport(false, emptyList()) { path ->
+                File("src/main/assets/$path").readText()
+            }
+        )
+        assertTrue(imported.item.enable)
+        assertFalse(imported.item.enableUpdate)
+        assertNull(imported.item.updateUrl)
+        assertNull(imported.subscription.updateUrl)
+        assertNull(imported.subscription.checkUpdateUrl)
+        assertEquals(imported.item.id, imported.subscription.id)
+        assertTrue(imported.subscription.hasRule)
+
+        // Enabling the subscription must not turn on groups the author left disabled.
+        val original = RawSubscription.parse(source(XAdSkipRulePack.Community.GANLIN))
+        assertEquals(original.apps, imported.subscription.apps)
+        assertEquals(original.globalGroups, imported.subscription.globalGroups)
+        assertEquals(original.categories, imported.subscription.categories)
+    }
+
+    @Test
+    fun completedInitializationDoesNotRecreateADeletedSubscription() {
+        val imported = XAdSkipRulePack.prepareFirstRunImport(true, emptyList()) {
+            error("An intentionally empty subscription list must remain empty")
+        }
+        assertNull(imported)
+    }
+
+    @Test
+    fun upgradingAnExistingInstallationPreservesItsSubscriptionsAndDisabledState() {
+        val existingConfigurations = listOf(
+            listOf(SubsItem(id = LOCAL_SUBS_ID, order = 0)),
+            listOf(SubsItem(id = XAdSkipRulePack.Community.GANLIN.subscriptionId, order = 0, enable = false)),
+            listOf(SubsItem(id = 42, order = 3, enable = true, updateUrl = "https://example.com/rules.json")),
+        )
+        existingConfigurations.forEach { items ->
+            assertNull(XAdSkipRulePack.prepareFirstRunImport(false, items) {
+                error("Existing subscriptions must not be overwritten or supplemented")
+            })
+        }
+    }
+
+    @Test
+    fun bundledRulesAreAcceptedByTheCurrentEngine() {
+        XAdSkipRulePack.Community.entries.forEach { pack ->
+            val subscription = XAdSkipRulePack.prepareCommunity(source(pack), pack)
+            assertTrue(subscription.hasRule)
+            subscription.apps.forEach { app ->
+                app.groups.forEach { group ->
+                    assertNull("${pack.title}/${app.id}/${group.key}", group.errorDesc)
+                }
+            }
+            subscription.globalGroups.forEach { group ->
+                assertNull("${pack.title}/global/${group.key}", group.errorDesc)
+            }
+        }
+    }
+
+    @Test
+    fun offlineImportPreservesRulesWithoutReplacingRemoteSubscriptions() {
+        XAdSkipRulePack.Community.entries.forEach { pack ->
+            val text = source(pack)
+            val original = RawSubscription.parse(text)
+            val imported = XAdSkipRulePack.prepareCommunity(text, pack)
+            assertNotEquals(original.id, imported.id)
+            assertNotEquals(XAdSkipConfig.draftSubscriptionId, imported.id)
+            assertNull(imported.updateUrl)
+            assertNull(imported.checkUpdateUrl)
+            assertEquals(original.author, imported.author)
+            assertEquals(original.version, imported.version)
+            assertEquals(original.apps, imported.apps)
+            assertEquals(original.globalGroups, imported.globalGroups)
+            assertEquals(original.categories, imported.categories)
+        }
+        // These IDs persist in user databases; the two bundled sources must never collide.
+        assertNotEquals(
+            XAdSkipRulePack.Community.GANLIN.subscriptionId,
+            XAdSkipRulePack.Community.AOGUAI.subscriptionId,
+        )
+    }
+
+    @Test
+    fun incorrectlyAssignedSourceIsRejectedBeforeImport() {
+        assertThrows(IllegalArgumentException::class.java) {
+            XAdSkipRulePack.prepareCommunity(
+                source(XAdSkipRulePack.Community.GANLIN),
+                XAdSkipRulePack.Community.AOGUAI,
+            )
+        }
+    }
+}

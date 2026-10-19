@@ -1,0 +1,7 @@
+{
+  "name": "xadskip-selector-check",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node check.mjs"},
+  "dependencies": {"@gkd-kit/selector": "0.5.23"}
+}
