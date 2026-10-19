@@ -159,7 +159,7 @@ fun WorkModePage() {
                                         mainVm.navigateWebPage(ShortUrlSet.URL2)
                                     })
                                     .padding(horizontal = 4.dp),
-                                text = "无法开启无障碍?",
+                                text = "无障碍帮助（GKD 上游参考）",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                             )

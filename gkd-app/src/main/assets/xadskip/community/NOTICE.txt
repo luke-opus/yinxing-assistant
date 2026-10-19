@@ -13,3 +13,12 @@ Commit: 4aa9643406e3fd58bd689fe9daab64fcbcf82bfe
 Subscription version: 88
 License: GPL-3.0-only (aoguai/LICENSE)
 
+ltt migration drafts: https://github.com/xue-mark/BACKUP-LiTiaotiao-Custom-Rules
+Commit: 27320e66e455cd7317afe59af31a8978d2c4e66d
+License: AGPL-3.0 (see third_party/ltt/LICENSE)
+Bundled license: ltt/LICENSE (unmodified upstream text)
+Draft asset: assets/xadskip/ltt-drafts.json
+XAdSkip 迁移草稿由上述社区规则转换，默认关闭；不是李跳跳应用源码或官方续作。
+XAdSkip migration drafts are converted from these community rules and disabled by default;
+they are not the LiTiaotiao application's source code or an official continuation.
+

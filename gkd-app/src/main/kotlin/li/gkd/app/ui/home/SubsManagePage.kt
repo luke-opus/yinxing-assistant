@@ -168,7 +168,7 @@ private fun useLoadedSubsManagePage(
                 Column {
                     Text(text = "启用多个远程订阅可能导致执行大量重复规则, 这可能造成规则执行卡顿以及多余耗电\n\n请认真考虑后再确认开启！！！\n")
                     Text(
-                        text = "查看耗电说明",
+                        text = "耗电说明（GKD 上游参考）",
                         modifier = Modifier.clickable(onClick = throttle {
                             vm.dismissPowerWarning()
                             mainVm.navigatePage(WebViewRoute(initUrl = ShortUrlSet.URL6))

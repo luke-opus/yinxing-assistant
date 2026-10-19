@@ -40,7 +40,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import li.gkd.app.META
 import li.gkd.app.R
+import li.gkd.app.core.state.Loadable
 import li.gkd.app.data.XAdSkipConfig
+import li.gkd.app.data.subscription.SubscriptionRepository
 import li.gkd.app.data.subscription.SubscriptionState
 import li.gkd.app.permission.PermissionStates
 import li.gkd.app.priv.privilegeContextFlow
@@ -81,6 +83,10 @@ fun useDashboardPage(): ScaffoldExt {
     val mainVm = LocalMainViewModel.current
     val vm = viewModel<DashboardVm>()
     val ruleSummary by SubscriptionState.ruleSummaryFlow.collectAsStateWithLifecycle()
+    val rulesState by SubscriptionRepository.snapshotFlow.collectAsStateWithLifecycle()
+    val rulesReady = rulesState is Loadable.Ready
+    val rulesFailed = rulesState is Loadable.Failure
+    val termsAccepted by mainVm.termsAcceptedFlow.collectAsStateWithLifecycle()
     val actionCount by actionCountFlow.collectAsStateWithLifecycle()
     val store by storeFlow.collectAsStateWithLifecycle()
     val privilegeContext by privilegeContextFlow.collectAsStateWithLifecycle()
@@ -92,7 +98,8 @@ fun useDashboardPage(): ScaffoldExt {
     val writeSecureSettings by PermissionStates.writeSecureSettings.stateFlow.collectAsStateWithLifecycle()
     val useA11y = store.useA11y || actualA11yScopeAppList.contains(topAppId)
     val serviceRunning = if (useA11y) a11yRunning else automation != null
-    val active = serviceRunning && store.enableMatch
+    val canPause = serviceRunning && store.enableMatch
+    val active = canPause && rulesReady
     var showMore by rememberSaveable { mutableStateOf(false) }
     var showRestrictedHelp by rememberSaveable { mutableStateOf(false) }
     val pageScrollState = rememberColumnScrollState()
@@ -103,7 +110,7 @@ fun useDashboardPage(): ScaffoldExt {
         AppAlertDialog(
             title = { Text("无法开启？") },
             text = {
-                Text("如果系统提示“受限设置”：\n1. 打开应用信息，点右上角菜单，选择“允许受限设置”。\n2. 返回这里，再点“开启自动跳过”。\n\n只在确认信任本应用后允许；不同手机的名称可能略有不同。")
+                Text("如果系统提示“受限设置”：\n1. 打开应用信息，点右上角菜单，选择“允许受限设置”。\n2. 返回这里，再点“开启辅助”。\n\n只在确认信任本应用后允许；不同手机的名称可能略有不同。")
             },
             onDismissRequest = { showRestrictedHelp = false },
             confirmButton = {
@@ -145,6 +152,8 @@ fun useDashboardPage(): ScaffoldExt {
                     Text(
                         text = when {
                             active -> "已开启"
+                            rulesFailed -> "规则准备失败"
+                            !rulesReady -> "正在准备规则"
                             serviceRunning -> "已暂停"
                             useA11y && a11yEnabled -> "需要重新开启"
                             else -> "尚未开启"
@@ -155,21 +164,28 @@ fun useDashboardPage(): ScaffoldExt {
                     Text(
                         text = when {
                             active -> "现在可以正常使用手机，遇到规则支持的广告会自动跳过。"
+                            rulesFailed -> "规则暂时没有准备好，请点下方按钮重试。"
+                            !rulesReady -> "正在准备手机内的广告规则，请稍等。准备好后就能开启。"
                             serviceRunning -> "已暂停自动点击，点下方按钮即可继续。"
                             useA11y && a11yEnabled -> "服务暂时没有运行，请在系统设置中关闭后重新打开。"
-                            else -> "点下方按钮，在系统页面找到“${META.appName}”并开启，再返回这里。"
+                            else -> "点下方按钮，在打开的系统页面允许“${META.appName}”服务，再返回这里。"
                         },
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Button(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+                        enabled = termsAccepted && (canPause || rulesReady || rulesFailed),
                         onClick = throttle {
+                            if (!termsAccepted) return@throttle
                             when {
-                                active -> vm.pauseMatching()
+                                canPause -> vm.pauseMatching()
+                                rulesFailed -> vm.retryRules()
+                                !rulesReady -> Unit
                                 serviceRunning -> vm.resumeMatching()
                                 useA11y && !writeSecureSettings -> {
-                                    vm.resumeMatching()
-                                    IntentUtils.openA11ySettings()
+                                    if (vm.resumeMatching()) {
+                                        IntentUtils.openA11ySettings()
+                                    }
                                 }
                                 !useA11y && privilegeContext == null ->
                                     mainVm.navigatePage(PrivilegeServiceRoute)
@@ -179,12 +195,19 @@ fun useDashboardPage(): ScaffoldExt {
                     ) {
                         Text(
                             text = when {
-                                active -> "暂停自动跳过"
-                                serviceRunning -> "继续自动跳过"
-                                else -> "开启自动跳过"
+                                canPause -> "暂停辅助"
+                                rulesFailed -> "重试准备规则"
+                                !rulesReady -> "正在准备规则…"
+                                serviceRunning -> "继续辅助"
+                                else -> "开启辅助"
                             },
                             style = MaterialTheme.typography.titleLarge,
                         )
+                    }
+                    if (rulesFailed && canPause) {
+                        TextButton(onClick = vm::retryRules) {
+                            Text("重试准备规则")
+                        }
                     }
                     if (!serviceRunning) {
                         Text(
@@ -226,9 +249,13 @@ fun useDashboardPage(): ScaffoldExt {
                 ServiceStatusCard(
                     subtitle = if (serviceRunning) "服务已连接" else "服务未连接",
                     checked = serviceRunning,
+                    enabled = termsAccepted && (serviceRunning || rulesReady),
                     onCheckedChange = { newEnabled ->
+                        if (!termsAccepted) return@ServiceStatusCard
                         if (newEnabled && useA11y && !writeSecureSettings) {
-                            IntentUtils.openA11ySettings()
+                            if (vm.resumeMatching()) {
+                                IntentUtils.openA11ySettings()
+                            }
                         } else if (newEnabled && !useA11y && privilegeContext == null) {
                             mainVm.navigatePage(PrivilegeServiceRoute)
                         } else {
@@ -410,6 +437,7 @@ private fun PageSwitchItemCard(
 private fun ServiceStatusCard(
     subtitle: String,
     checked: Boolean,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     mode: String,
     onModeClick: () -> Unit,
@@ -426,6 +454,7 @@ private fun ServiceStatusCard(
             modifier = Modifier
                 .semantics(mergeDescendants = true) {}
                 .clickable(
+                    enabled = enabled,
                     onClickLabel = "切换服务状态",
                     onClick = onStatusClick,
                 ),
@@ -446,6 +475,7 @@ private fun ServiceStatusCard(
             Spacer(Modifier.width(8.dp))
             PerfSwitch(
                 checked = checked,
+                enabled = enabled,
                 onCheckedChange = null,
             )
         }

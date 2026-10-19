@@ -1,21 +1,17 @@
 package li.gkd.app.feature.settings
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +24,6 @@ import li.gkd.app.data.XAdSkipConfig
 import li.gkd.app.util.format
 import li.gkd.app.util.getShareApkFile
 import li.gkd.app.ui.share.launchUiAction
-import li.gkd.app.util.IntentUtils
 
 @Composable
 fun AboutDialogs(
@@ -69,10 +64,7 @@ private fun VersionInfoDialog(
                     Column {
                         Text(text = "代码记录")
                         Text(
-                            modifier = Modifier.clickable { IntentUtils.openUri(META.commitUrl) },
                             text = META.tagName ?: META.commitId.substring(0, 16),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = LocalTextStyle.current.copy(textDecoration = TextDecoration.Underline),
                         )
                     }
                     Column {

@@ -11,10 +11,14 @@ import li.gkd.app.META
 import li.gkd.app.app
 import li.gkd.app.permission.PermissionStates
 import li.gkd.app.platform.lifecycle.MainActivityVisibility
+import li.gkd.app.service.A11yService
 import li.songe.codeorigin.CallSite
 import kotlin.reflect.KClass
 
 object IntentUtils {
+    // Available from Android 10, but the action constant is not part of the public SDK.
+    private const val ACCESSIBILITY_DETAILS_ACTION = "android.settings.ACCESSIBILITY_DETAILS_SETTINGS"
+
     fun openWeChatScaner() {
         val intent = app.packageManager.getLaunchIntentForPackage("com.tencent.mm")?.apply {
             putExtra("LauncherUI.From.Scaner.Shortcut", true)
@@ -27,6 +31,20 @@ object IntentUtils {
     }
 
     fun openA11ySettings() {
+        if (AndroidTarget.Q) {
+            val detailsIntent = Intent(ACCESSIBILITY_DETAILS_ACTION).apply {
+                // Settings reads this extra as a flattened String, not a Parcelable ComponentName.
+                putExtra(Intent.EXTRA_COMPONENT_NAME, A11yService.a11yCn.flattenToString())
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            try {
+                app.startActivity(detailsIntent)
+                return
+            } catch (e: Exception) {
+                // Some devices omit or restrict the detail activity. Keep the normal settings path.
+                LogUtils.d("openA11yDetailsSettings", e)
+            }
+        }
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         app.tryStartActivity(intent)

@@ -103,6 +103,7 @@ subprojects {
             KotlinMultiplatformAndroidLibraryTarget::class.java
         ).configureEach {
             compileSdk = Cfg.compileSdk
+            buildToolsVersion = Cfg.buildToolsVersion
             minSdk = Cfg.minSdk
             compilerOptions {
                 jvmTarget.set(Cfg.kotlinTargetVersion)

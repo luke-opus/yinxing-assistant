@@ -4,9 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,26 +28,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import li.gkd.app.data.XAdSkipConfig
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import li.gkd.app.META
-import li.gkd.app.store.AppStore.storeFlow
-import li.gkd.app.store.AppStore
 import li.gkd.app.ui.component.PerfIcon
 import li.gkd.app.ui.component.PerfIconButton
 import li.gkd.app.ui.component.PerfTopAppBar
-import li.gkd.app.ui.component.RotatingLoadingIcon
 import li.gkd.app.ui.component.SettingItem
-import li.gkd.app.ui.component.TextMenu
 import li.gkd.app.ui.share.LocalMainViewModel
 import li.gkd.app.ui.style.EmptyHeight
 import li.gkd.app.ui.style.itemPadding
 import li.gkd.app.ui.style.titleItemPadding
-import li.gkd.app.util.UpdateChannelOption
-import li.gkd.app.util.findOption
 import li.gkd.app.ui.share.launchUiAction
-import li.gkd.app.ui.share.launchUi
 import li.gkd.app.util.throttle
 
 @Serializable
@@ -61,8 +51,6 @@ fun AboutPage() {
     var showVersionInfoDialog by rememberSaveable { mutableStateOf(false) }
     var showShareAppDialog by rememberSaveable { mutableStateOf(false) }
     var showPrivacyDialog by rememberSaveable { mutableStateOf(false) }
-    val store by storeFlow.collectAsStateWithLifecycle()
-    val updateChannel = UpdateChannelOption.objects.findOption(store.updateChannel)
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
@@ -169,53 +157,6 @@ fun AboutPage() {
                     mainVm.shareLog.show()
                 }
             )
-            if (mainVm.updateStatus != null) {
-                Text(
-                    text = "更新",
-                    modifier = Modifier.titleItemPadding(),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                TextMenu(
-                    title = "更新渠道",
-                    option = updateChannel
-                ) {
-                    if (mainVm.updateStatus.checkUpdatingFlow.value) return@TextMenu
-                    if (it.value == UpdateChannelOption.Beta.value) {
-                        mainVm.scope.launchUi {
-                            if (!mainVm.dialogRequests.confirm(
-                                title = "版本渠道",
-                                text = "测试版本渠道更新快\n但不稳定可能存在较多BUG\n请谨慎使用",
-                            )) return@launchUi
-                            AppStore.updateSettings { settings ->
-                                settings.copy(updateChannel = it.value)
-                            }
-                        }
-                    } else {
-                        AppStore.updateSettings { settings ->
-                            settings.copy(updateChannel = it.value)
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .clickable(
-                            onClick = throttle {
-                                mainVm.updateStatus.checkUpdate(true)
-                            }
-                        )
-                        .fillMaxWidth()
-                        .itemPadding(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "检查更新",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    RotatingLoadingIcon(loading = mainVm.updateStatus.checkUpdatingFlow.collectAsStateWithLifecycle().value)
-                }
-            }
             Spacer(modifier = Modifier.height(EmptyHeight))
         }
     }

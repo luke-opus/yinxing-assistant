@@ -219,6 +219,7 @@ private fun CaptureScreenshotConfigDialog(
                 Text(text = "截屏快照")
                 PerfIconButton(
                     imageVector = PerfIcon.HelpOutline,
+                    contentDescription = "GKD 上游快照参考文档",
                     onClick = throttle(onOpenHelp),
                 )
             }

@@ -18,7 +18,8 @@ def main():
     parser.add_argument("--check", action="store_true", help="Verify committed assets without writing")
     parser.add_argument("--apk-dir", type=Path, help="Also verify the single APK in this directory")
     args = parser.parse_args()
-    upstream = json.loads((ROOT / "UPSTREAM.json").read_text(encoding="utf-8"))["gkdSubscriptions"]
+    origins = json.loads((ROOT / "UPSTREAM.json").read_text(encoding="utf-8"))
+    upstream = origins["gkdSubscriptions"]
     snapshots = json.loads((ROOT / "rules/community-snapshots.json").read_text(encoding="utf-8"))["sources"]
     expected = {}
     notice = ["XAdSkip 内置社区规则 / Bundled community subscriptions", "",
@@ -39,6 +40,21 @@ def main():
         notice.extend([f"{name}: {source['url']}", f"Commit: {source['commit']}",
                        f"Subscription version: {source['subscriptionVersion']}",
                        f"License: {source['license']} ({name}/LICENSE)", ""])
+    ltt = origins["lttRules"]
+    ltt_license = (ROOT / "third_party/ltt/LICENSE").read_bytes()
+    assert hashlib.sha256(ltt_license).hexdigest() == ltt["files"]["LICENSE"], "ltt/LICENSE"
+    expected["ltt/LICENSE"] = ltt_license
+    notice.extend([
+        f"ltt migration drafts: {ltt['url']}",
+        f"Commit: {ltt['commit']}",
+        f"License: {ltt['license']}",
+        "Bundled license: ltt/LICENSE (unmodified upstream text)",
+        "Draft asset: assets/xadskip/ltt-drafts.json",
+        "XAdSkip 迁移草稿由上述社区规则转换，默认关闭；不是李跳跳应用源码或官方续作。",
+        "XAdSkip migration drafts are converted from these community rules and disabled by default;",
+        "they are not the LiTiaotiao application's source code or an official continuation.",
+        "",
+    ])
     expected["NOTICE.txt"] = ("\n".join(notice) + "\n").encode("utf-8")
     existing = {p.relative_to(ASSETS).as_posix() for p in ASSETS.rglob("*") if p.is_file()}
     assert not existing - expected.keys(), f"Unexpected asset files: {existing - expected.keys()}"
