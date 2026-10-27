@@ -15,7 +15,6 @@ import li.gkd.app.ui.component.AppAlertDialog
 import li.gkd.app.ui.component.TermsAcceptDialog
 import li.gkd.app.ui.share.LocalMainViewModel
 import li.gkd.app.util.ToastUtils.toast
-import li.gkd.app.util.IntentUtils
 
 @Composable
 fun AppOverlayHost() {
@@ -71,7 +70,7 @@ private fun AccessRestrictedSettingsDlg() {
                 Text(text = "权限受限")
             },
             text = {
-                Text(text = "若系统提示“受限设置”，请在应用信息的右上角菜单中选择“允许受限设置”，然后返回首页重新开启。请只在确认信任本应用后允许。")
+                Text(text = "将直接打开本应用的信息页。请在右上角菜单选择“允许受限设置”，完成后按系统返回键，会继续打开无障碍授权页面。系统确认仍需您亲自完成；不同手机的入口可能不同。")
             },
             onDismissRequest = {
                 dismissAccessRestrictedSettingsDialog()
@@ -79,9 +78,9 @@ private fun AccessRestrictedSettingsDlg() {
             confirmButton = {
                 TextButton({
                     dismissAccessRestrictedSettingsDialog()
-                    IntentUtils.openAppDetailsSettings()
+                    mainVm.requestA11ySetup(repairRestriction = true)
                 }) {
-                    Text(text = "打开应用信息")
+                    Text(text = "前往解除限制并继续")
                 }
             },
             dismissButton = {

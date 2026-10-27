@@ -3,6 +3,7 @@ package li.gkd.app.permission
 import android.Manifest
 import android.app.AppOpsManager
 import android.app.AppOpsManagerHidden
+import android.os.Build
 import android.provider.Settings
 import com.hjq.permissions.XXPermissions
 import com.hjq.permissions.permission.PermissionLists
@@ -118,6 +119,35 @@ object PermissionStates {
     val Manifest_permission_GET_APP_OPS_STATS get() = "android.permission.GET_APP_OPS_STATS"
 
     private var canRestrictsRead = true
+
+    /** A missing privileged read capability must not be reported as unrestricted. */
+    fun readAccessibilitySetupRestriction(): A11ySetupRestriction {
+        // Android 15+ may use Enhanced Confirmation Mode; legacy AppOps are not
+        // an authoritative cross-device contract for that state.
+        if (!canRestrictsRead || !AndroidTarget.UPSIDE_DOWN_CAKE ||
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM ||
+            !app.checkGrantedPermission(Manifest_permission_GET_APP_OPS_STATS)
+        ) {
+            return A11ySetupRestriction.Unknown
+        }
+        return try {
+            when (app.appOpsManager.checkOpNoThrow(
+                AppOpsManagerHidden.OPSTR_ACCESS_RESTRICTED_SETTINGS,
+                android.os.Process.myUid(),
+                app.packageName,
+            )) {
+                AppOpsManager.MODE_ALLOWED -> A11ySetupRestriction.NotRestricted
+                AppOpsManager.MODE_IGNORED, AppOpsManager.MODE_ERRORED -> A11ySetupRestriction.Restricted
+                else -> A11ySetupRestriction.Unknown
+            }
+        } catch (_: SecurityException) {
+            canRestrictsRead = false
+            A11ySetupRestriction.Unknown
+        } catch (_: IllegalArgumentException) {
+            A11ySetupRestriction.Unknown
+        }
+    }
+
     private fun checkAccessRestrictedSettings(): Boolean {
         return if (
             canRestrictsRead &&

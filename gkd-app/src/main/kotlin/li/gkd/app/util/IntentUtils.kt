@@ -3,8 +3,10 @@ package li.gkd.app.util
 import li.gkd.app.util.ToastUtils.toast
 
 import android.app.Service
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.provider.Settings
 import androidx.core.net.toUri
 import li.gkd.app.META
@@ -16,8 +18,10 @@ import li.songe.codeorigin.CallSite
 import kotlin.reflect.KClass
 
 object IntentUtils {
-    // Available from Android 10, but the action constant is not part of the public SDK.
+    // Some versions/OEMs allow this action; others protect the activity with a system permission.
     private const val ACCESSIBILITY_DETAILS_ACTION = "android.settings.ACCESSIBILITY_DETAILS_SETTINGS"
+    private const val SETTINGS_FRAGMENT_ARGS_KEY = ":settings:fragment_args_key"
+    private const val SETTINGS_SHOW_FRAGMENT_ARGS = ":settings:show_fragment_args"
 
     fun openWeChatScaner() {
         val intent = app.packageManager.getLaunchIntentForPackage("com.tencent.mm")?.apply {
@@ -30,31 +34,45 @@ object IntentUtils {
         app.tryStartActivity(intent)
     }
 
-    fun openA11ySettings() {
+    fun a11ySettingsIntents(): List<Intent> = buildList {
         if (AndroidTarget.Q) {
-            val detailsIntent = Intent(ACCESSIBILITY_DETAILS_ACTION).apply {
+            add(Intent(ACCESSIBILITY_DETAILS_ACTION).apply {
                 // Settings reads this extra as a flattened String, not a Parcelable ComponentName.
                 putExtra(Intent.EXTRA_COMPONENT_NAME, A11yService.a11yCn.flattenToString())
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
+            })
+        }
+        add(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+            // Best-effort highlighting in Settings implementations that honor this hint.
+            // This only selects a visible preference; it does not choose a protected fragment.
+            val component = A11yService.a11yCn.flattenToString()
+            putExtra(SETTINGS_FRAGMENT_ARGS_KEY, component)
+            putExtra(SETTINGS_SHOW_FRAGMENT_ARGS, Bundle().apply {
+                putString(SETTINGS_FRAGMENT_ARGS_KEY, component)
+            })
+        })
+    }
+
+    fun appDetailsSettingsIntent(): Intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = "package:${app.packageName}".toUri()
+    }
+
+    fun openA11ySettings() {
+        for (intent in a11ySettingsIntents()) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             try {
-                app.startActivity(detailsIntent)
+                app.startActivity(intent)
                 return
-            } catch (e: Exception) {
-                // Some devices omit or restrict the detail activity. Keep the normal settings path.
+            } catch (e: SecurityException) {
+                LogUtils.d("openA11yDetailsSettings", e)
+            } catch (e: ActivityNotFoundException) {
                 LogUtils.d("openA11yDetailsSettings", e)
             }
         }
-        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        app.tryStartActivity(intent)
+        toast("无法打开无障碍设置，请在系统设置中打开")
     }
 
     fun openAppDetailsSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = "package:${app.packageName}".toUri()
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+        val intent = appDetailsSettingsIntent().addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         app.tryStartActivity(intent)
     }
 

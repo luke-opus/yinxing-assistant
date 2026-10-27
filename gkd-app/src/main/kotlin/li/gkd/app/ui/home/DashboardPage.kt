@@ -72,7 +72,6 @@ import li.gkd.app.ui.style.EmptyHeight
 import li.gkd.app.ui.style.itemHorizontalPadding
 import li.gkd.app.ui.style.itemVerticalPadding
 import li.gkd.app.ui.style.surfaceCardColors
-import li.gkd.app.util.IntentUtils
 import li.gkd.app.ui.share.launchUi
 import li.gkd.app.ui.share.statusText
 import li.gkd.app.util.throttle
@@ -110,14 +109,14 @@ fun useDashboardPage(): ScaffoldExt {
         AppAlertDialog(
             title = { Text("无法开启？") },
             text = {
-                Text("如果系统提示“受限设置”：\n1. 打开应用信息，点右上角菜单，选择“允许受限设置”。\n2. 返回这里，再点“开启辅助”。\n\n只在确认信任本应用后允许；不同手机的名称可能略有不同。")
+                Text("如果系统提示“受限设置”：\n1. 点下方按钮，直接打开 ${META.appName} 的应用信息。\n2. 在右上角菜单选择“允许受限设置”。\n3. 按系统返回键，会自动继续到无障碍授权页面，无需再找入口。\n\n请在系统页面亲自确认；不同手机的名称和可直达的页面可能不同。如暂不授权，在后续无障碍页面按返回即可结束。")
             },
             onDismissRequest = { showRestrictedHelp = false },
             confirmButton = {
                 TextButton(onClick = {
                     showRestrictedHelp = false
-                    IntentUtils.openAppDetailsSettings()
-                }) { Text("打开应用信息") }
+                    mainVm.requestA11ySetup(repairRestriction = true)
+                }) { Text("前往解除限制并继续") }
             },
             dismissButton = {
                 TextButton(onClick = { showRestrictedHelp = false }) { Text("返回") }
@@ -168,7 +167,7 @@ fun useDashboardPage(): ScaffoldExt {
                             !rulesReady -> "正在准备手机内的广告规则，请稍等。准备好后就能开启。"
                             serviceRunning -> "已暂停自动点击，点下方按钮即可继续。"
                             useA11y && a11yEnabled -> "服务暂时没有运行，请在系统设置中关闭后重新打开。"
-                            else -> "点下方按钮，在打开的系统页面允许“${META.appName}”服务，再返回这里。"
+                            else -> "点下方按钮，会打开可用的系统授权入口；部分手机仍需选择“${META.appName}”。若提示受限设置，点“无法开启？”可直接进入本应用信息。"
                         },
                         style = MaterialTheme.typography.bodyLarge,
                     )
@@ -184,7 +183,7 @@ fun useDashboardPage(): ScaffoldExt {
                                 serviceRunning -> vm.resumeMatching()
                                 useA11y && !writeSecureSettings -> {
                                     if (vm.resumeMatching()) {
-                                        IntentUtils.openA11ySettings()
+                                        mainVm.requestA11ySetup()
                                     }
                                 }
                                 !useA11y && privilegeContext == null ->
@@ -254,7 +253,7 @@ fun useDashboardPage(): ScaffoldExt {
                         if (!termsAccepted) return@ServiceStatusCard
                         if (newEnabled && useA11y && !writeSecureSettings) {
                             if (vm.resumeMatching()) {
-                                IntentUtils.openA11ySettings()
+                                mainVm.requestA11ySetup()
                             }
                         } else if (newEnabled && !useA11y && privilegeContext == null) {
                             mainVm.navigatePage(PrivilegeServiceRoute)

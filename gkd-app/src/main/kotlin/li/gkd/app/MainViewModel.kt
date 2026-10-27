@@ -1,5 +1,6 @@
 package li.gkd.app
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.navigation3.runtime.NavBackStack
@@ -27,6 +28,9 @@ import li.gkd.app.priv.privilegeContextFlow
 import li.gkd.app.priv.uiAutomationFlow
 import li.gkd.app.permission.PermissionRequests
 import li.gkd.app.permission.PermissionStates
+import li.gkd.app.permission.A11ySetupController
+import li.gkd.app.permission.A11ySetupPage
+import li.gkd.app.permission.A11ySetupResult
 import li.gkd.app.service.A11yService
 import li.gkd.app.store.AppStore
 import li.gkd.app.store.FileStateStore
@@ -95,6 +99,62 @@ class MainViewModel : BaseViewModel() {
     }
 
     val activityResults = ActivityResultRequests()
+
+    private val a11ySetupController by lazy {
+        A11ySetupController(
+            isGranted = { app.getSecureA11yServices().contains(A11yService.a11yCn) },
+            readRestriction = PermissionStates::readAccessibilitySetupRestriction,
+            openSettings = ::openA11ySetupSettings,
+        )
+    }
+
+    fun requestA11ySetup(repairRestriction: Boolean = false) {
+        if (!termsAcceptedFlow.value) return
+        scope.launchUi {
+            val enabledButDisconnected =
+                app.getSecureA11yServices().contains(A11yService.a11yCn) && !A11yService.isRunning.value
+            when (a11ySetupController.start(repairRestriction, enabledButDisconnected)) {
+                A11ySetupResult.StillRestricted ->
+                    toast("系统仍限制了权限。请点“无法开启？”，允许受限设置后再返回。")
+                A11ySetupResult.NotGranted ->
+                    toast("尚未开启辅助，您可以随时再次开启。")
+                A11ySetupResult.Granted, A11ySetupResult.AlreadyInProgress -> Unit
+            }
+        }
+    }
+
+    private suspend fun openA11ySetupSettings(page: A11ySetupPage) {
+        if (page == A11ySetupPage.AppInfo) {
+            toast("请在应用信息的右上角允许受限设置，完成后按返回继续授权。")
+            // No NEW_TASK: resume this user request when the settings activity finishes.
+            try {
+                activityResults.startActivity(IntentUtils.appDetailsSettingsIntent())
+            } catch (e: SecurityException) {
+                throw IllegalStateException("无法打开应用信息，请在手机设置中找到 ${META.appName}。", e)
+            } catch (e: ActivityNotFoundException) {
+                throw IllegalStateException("无法打开应用信息，请在手机设置中找到 ${META.appName}。", e)
+            }
+        } else {
+            var failure: Exception? = null
+            for (intent in IntentUtils.a11ySettingsIntents()) {
+                try {
+                    activityResults.startActivity(intent)
+                    return
+                } catch (e: SecurityException) {
+                    failure = e
+                    LogUtils.d("openA11ySetupSettings", e)
+                } catch (e: ActivityNotFoundException) {
+                    failure = e
+                    LogUtils.d("openA11ySetupSettings", e)
+                }
+            }
+            throw IllegalStateException(
+                "无法打开系统授权页面，请在手机设置中找到 ${META.appName} 的无障碍服务。",
+                failure,
+            )
+        }
+    }
+
     val permissionRequests = PermissionRequests {
         navigatePage(PrivilegeServiceRoute)
     }

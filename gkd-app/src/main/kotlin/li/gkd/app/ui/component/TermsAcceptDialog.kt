@@ -45,7 +45,7 @@ fun TermsAcceptDialog() {
                     modifier = Modifier.fillMaxWidth(),
                     text = buildAnnotatedString {
                         append("开启后，本应用会通过无障碍服务读取屏幕内容，并按您启用的规则自动点击。您可随时在首页暂停。\n\n")
-                        append("下一步点“开启自动跳过”，在系统页面亲自确认授权。\n\n")
+                        append("下一步点“开启辅助”，在系统页面亲自确认授权。\n\n")
                         append("继续前，请阅读")
                         withLink(LinkAnnotation.Url(XAdSkipConfig.useNotesUrl, linkStyles)) {
                             append("使用说明")
