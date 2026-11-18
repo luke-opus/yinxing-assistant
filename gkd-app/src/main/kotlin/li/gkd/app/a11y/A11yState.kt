@@ -5,28 +5,20 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
 import android.util.LruCache
-import android.view.accessibility.AccessibilityNodeInfo
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import li.gkd.app.META
 import li.gkd.app.app
 import li.gkd.app.appScope
-import li.gkd.db.ActionLog
-import li.gkd.app.data.ActionResult
 import li.gkd.db.ActivityLog
-import li.gkd.app.data.AttrInfo
 import li.gkd.app.data.ResetMatchType
 import li.gkd.app.data.ResolvedRule
 import li.gkd.app.data.RuleStatus
 import li.gkd.app.data.insert
 import li.gkd.app.data.isSystem
 import li.gkd.app.service.updateTopTaskAppId
-import li.gkd.app.store.AppStore.actionCountFlow
 import li.gkd.app.store.AppStore.checkAppBlockMatch
 import li.gkd.app.util.AndroidTarget
 import li.gkd.app.util.LogUtils
@@ -307,35 +299,3 @@ fun updateSystemDefaultAppId() {
         }
     }
 }
-
-private val actionLogMutex = Mutex()
-fun addActionLog(
-    rule: ResolvedRule,
-    topActivity: TopActivity,
-    target: AccessibilityNodeInfo,
-    actionResult: ActionResult,
-) = appScope.launchLogged(Dispatchers.IO) {
-    val ctime = System.currentTimeMillis()
-    actionLogMutex.withLock {
-        val actionLog = ActionLog(
-            appId = topActivity.appId,
-            activityId = topActivity.activityId,
-            subsId = rule.subsItem.id,
-            subsVersion = rule.rawSubs.version,
-            groupKey = rule.g.group.key,
-            groupType = rule.g.group.groupType,
-            ruleIndex = rule.index,
-            ruleKey = rule.key,
-            ctime = ctime,
-        )
-        Db.actionLogDao.insert(actionLog)
-        if (actionCountFlow.value % 100 == 0L) {
-            Db.actionLogDao.deleteKeepLatest()
-        }
-    }
-    LogUtils.d(
-        rule.statusText(),
-        AttrInfo.info2data(target, 0, 0),
-        actionResult
-    )
-}.let {}

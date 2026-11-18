@@ -1,16 +1,16 @@
 XAdSkip 内置社区规则 / Bundled community subscriptions
 
-原始规则与署名按各来源许可证保留。导入后使用独立订阅标识，关闭网络更新。
-Original rules and notices are preserved. Imported copies use separate IDs and offline updates.
+原始规则与署名按各来源许可证保留。内置副本使用独立订阅标识，随应用升级刷新，保留用户开关；关闭网络更新。
+Original rules and notices are preserved. Bundled copies use separate IDs, refresh with app updates, and preserve user settings; network updates are disabled.
 
 ganlinte: https://github.com/ganlinte/GKD-subscription
-Commit: 27c1178fdd9e3601b281680037a83c8167352808
-Subscription version: 71
+Commit: 4746d192b4c57a4b62ed92a7f5deaf79e64fa811
+Subscription version: 72
 License: MIT (ganlinte/LICENSE)
 
 aoguai: https://github.com/aoguai/subscription
-Commit: 4aa9643406e3fd58bd689fe9daab64fcbcf82bfe
-Subscription version: 88
+Commit: e0ad57290fed632e7305f67f92fcca8e775fb825
+Subscription version: 89
 License: GPL-3.0-only (aoguai/LICENSE)
 
 ltt migration drafts: https://github.com/xue-mark/BACKUP-LiTiaotiao-Custom-Rules

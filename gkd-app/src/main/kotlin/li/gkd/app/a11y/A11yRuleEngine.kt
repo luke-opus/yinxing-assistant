@@ -380,18 +380,28 @@ class A11yRuleEngine(private val service: A11yCommonImpl) {
             }
             if (rule.status != RuleStatus.StatusOk) break
             if (checkOutDate(activityRule, tempStateEvent)) break
-            val actionResult = rule.performAction(target)
-            if (actionResult.result) {
-                val topActivity = currentTopActivity
-                rule.trigger()
-                scope.launch(actionDispatcher) {
-                    delay(300.milliseconds)
-                    startQueryJob()
+            if (!effective || !storeFlow.value.enableMatch) return
+            val record = RuleActionExecution.capture(
+                rule, activityRule.topActivity, System.currentTimeMillis(),
+            )
+            RuleActionExecution.execute(
+                record = record,
+                perform = { rule.performAction(target) },
+                canStartAction = { effective && storeFlow.value.enableMatch },
+                onSuccess = { completedRecord, actionResult ->
+                    rule.trigger()
+                    ActionLogRecording.insert(completedRecord)
+                    if (actionResult.action != ActionPerformer.None.action) {
+                        runCatching { showActionToast(rule) }
+                    }
+                },
+            ).also { result ->
+                if (result.result) {
+                    scope.launch(actionDispatcher) {
+                        delay(300.milliseconds)
+                        startQueryJob()
+                    }
                 }
-                if (actionResult.action != ActionPerformer.None.action) {
-                    showActionToast(rule)
-                }
-                addActionLog(rule, topActivity, target, actionResult)
             }
         }
     }

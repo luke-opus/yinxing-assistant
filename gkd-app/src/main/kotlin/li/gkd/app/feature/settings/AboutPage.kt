@@ -27,14 +27,17 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import li.gkd.app.data.XAdSkipConfig
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import li.gkd.app.META
+import li.gkd.app.store.AppStore
 import li.gkd.app.ui.component.PerfIcon
 import li.gkd.app.ui.component.PerfIconButton
 import li.gkd.app.ui.component.PerfTopAppBar
 import li.gkd.app.ui.component.SettingItem
+import li.gkd.app.ui.component.TextSwitch
 import li.gkd.app.ui.share.LocalMainViewModel
 import li.gkd.app.ui.style.EmptyHeight
 import li.gkd.app.ui.style.itemPadding
@@ -118,6 +121,24 @@ fun AboutPage() {
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            mainVm.updateStatus?.let { updateStatus ->
+                val checking by updateStatus.checkUpdatingFlow.collectAsStateWithLifecycle()
+                val message by updateStatus.checkMessageFlow.collectAsStateWithLifecycle()
+                val settings by AppStore.storeFlow.collectAsStateWithLifecycle()
+                SettingItem(
+                    title = if (checking) "正在检查更新…" else "检查新版本",
+                    subtitle = if (checking) "正在连接 XAdSkip 官网" else
+                        message ?: "当前版本 v${META.versionName}",
+                    onClickLabel = "检查 XAdSkip 新版本",
+                    onClick = if (checking) null else ({ updateStatus.checkUpdate(manual = true) }),
+                )
+                TextSwitch(
+                    title = "自动检查新版本",
+                    subtitle = "每天最多检查一次；下载和安装由你确认",
+                    checked = settings.autoCheckAppUpdate,
+                    onCheckedChange = updateStatus::setAutoCheck,
+                )
+            }
             SettingItem(
                 imageVector = null,
                 title = "XAdSkip 网站",

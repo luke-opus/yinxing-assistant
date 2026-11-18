@@ -220,12 +220,15 @@ fun useDashboardPage(): ScaffoldExt {
                     }
                 }
             }
-            Text(
-                text = "累计自动操作 $actionCount 次",
-                modifier = Modifier.padding(horizontal = 8.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            TextButton(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                onClick = { mainVm.navigatePage(ActionLogRoute()) },
+            ) {
+                Text(
+                    text = "查看触发记录（累计 $actionCount 次）",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
             TextButton(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                 onClick = { showMore = !showMore },

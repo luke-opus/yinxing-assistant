@@ -55,6 +55,25 @@ object SubscriptionRepository {
                         insertItem = true,
                     )
                 }
+                // APK upgrades refresh installed offline copies independently of first-run setup.
+                // Only their rule content changes; subscription and group choices remain intact.
+                items.filter { item ->
+                    XAdSkipRulePack.Community.entries.any { it.subscriptionId == item.id }
+                }.forEach { item ->
+                    val current = try {
+                        load(item.id)
+                    } catch (e: Exception) {
+                        // The normal refresh records this per-subscription error without
+                        // blocking other installed subscriptions or replacing unreadable edits.
+                        LogUtils.d("无法刷新内置订阅", item.id, e)
+                        return@forEach
+                    }
+                    XAdSkipRulePack.prepareBundledUpgrade(current) { path ->
+                        app.assets.open(path).bufferedReader().use { it.readText() }
+                    }?.let { upgraded ->
+                        saveLocked(upgraded, preserveGroupConfigs = true)
+                    }
+                }
                 // Mark only after a successful save (or detecting an existing installation).
                 // A deleted or disabled default must not return on the next app launch.
                 if (!initialized) {
@@ -409,6 +428,7 @@ object SubscriptionRepository {
         subscription: RawSubscription,
         newItem: SubsItem? = null,
         insertItem: Boolean = false,
+        preserveGroupConfigs: Boolean = false,
     ) {
         val id = subscription.id
         val snapshot = snapshotFlow.value.value
@@ -417,7 +437,7 @@ object SubscriptionRepository {
                 previous = SubscriptionSnapshot(),
             )
         val nextSubscription = prepareSubscription(subscription, snapshot)
-        SubscriptionPersistence.save(nextSubscription, newItem, insertItem)
+        SubscriptionPersistence.save(nextSubscription, newItem, insertItem, preserveGroupConfigs)
         snapshotFlow.value = Loadable.Ready(snapshot.copy(
             subscriptions = snapshot.subscriptions.toMutableMap().apply {
                 set(id, nextSubscription)

@@ -26,30 +26,32 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import li.gkd.app.META
 import li.gkd.app.app
+import li.gkd.app.data.XAdSkipConfig
+import li.gkd.app.store.AppStore
 import li.gkd.app.store.FileStateStore
-import li.gkd.app.store.AppStore.storeFlow
 import li.gkd.app.ui.component.AppAlertDialog
 import li.songe.codeorigin.CallSite
 import java.io.File
-import java.net.URI
-import kotlin.time.Duration.Companion.days
 
-
-private val UPDATE_URL: String
-    get() = UpdateChannelOption.objects.findOption(storeFlow.value.updateChannel).url
 
 @Serializable
 data class NewVersion(
+    val packageName: String,
     val versionCode: Int,
     val versionName: String,
     val downloadUrl: String,
     val fileSize: Long,
+    val sha256: String,
     val versionLogs: List<VersionLog> = emptyList(),
 )
 
@@ -60,15 +62,21 @@ data class VersionLog(
     val desc: String,
 )
 
-private var lastCheckTime = 0L
-
 class UpdateStatus(val scope: CoroutineScope) {
+    private val updateClient by lazy {
+        client.config {
+            followRedirects = false
+            expectSuccess = false
+        }
+    }
     private val checkUpdatingMutex = MutexState()
     val checkUpdatingFlow
         get() = checkUpdatingMutex.state
     private val newVersionFlow = MutableStateFlow<NewVersion?>(null)
     private val downloadStatusFlow = MutableStateFlow<LoadStatus<File>?>(null)
     private var downloadJob: Job? = null
+    val checkMessageFlow: StateFlow<String?>
+        field: MutableStateFlow<String?> = MutableStateFlow(null)
 
     private val ignoreVersionListFlow by lazy {
         FileStateStore.createJsonFlow(
@@ -79,76 +87,112 @@ class UpdateStatus(val scope: CoroutineScope) {
     }
     private var lastManual = false
 
-    val canRecheck get() = System.currentTimeMillis() - lastCheckTime > 1.days.inWholeMilliseconds
+    val canRecheck get() = AppStore.storeFlow.value.let { settings ->
+        XAdSkipUpdatePolicy.shouldAutoCheck(
+            settings.autoCheckAppUpdate,
+            settings.lastAppUpdateCheckAt,
+            System.currentTimeMillis(),
+        )
+    }
+
+    fun setAutoCheck(enabled: Boolean) {
+        AppStore.updateSettings { it.copy(autoCheckAppUpdate = enabled) }
+    }
 
     fun checkUpdate(
         manual: Boolean = false,
         @CallSite loc: String = "",
     ) {
-        // XAdSkip uses independent releases; never install an upstream GKD APK.
-        if (li.gkd.app.data.XAdSkipConfig.upstreamUpdatesDisabled) {
-            if (manual) toast("XAdSkip 开发版暂未配置更新渠道", loc = loc)
-            return
-        }
+        if (!manual && !canRecheck) return
         scope.launchLogged(Dispatchers.IO, loc = loc) {
             try {
-                lastManual = manual
                 checkUpdatingMutex.tryWithStateLock {
-                    lastCheckTime = System.currentTimeMillis()
-                    if (!NetworkUtils.isAvailable()) {
-                        error("网络不可用")
+                    lastManual = manual
+                    checkMessageFlow.value = null
+                    val newVersion = withTimeout(15_000) {
+                        val response = updateClient.get(XAdSkipConfig.updateManifestUrl) {
+                            onDownload { bytesReceived, _ ->
+                                require(bytesReceived <= 256 * 1024) { "更新信息过大" }
+                            }
+                        }
+                        require(response.status.value == 200) { "更新服务暂时不可用" }
+                        XAdSkipUpdatePolicy.validate(response.body<NewVersion>())
                     }
-                    val newVersion = client.get(UPDATE_URL).body<NewVersion>()
-                    if (newVersion.versionCode <= META.versionCode) {
-                        if (manual) toast("暂无更新", loc = loc)
+                    AppStore.updateSettings { it.copy(lastAppUpdateCheckAt = System.currentTimeMillis()) }
+                    if (!XAdSkipUpdatePolicy.isNewer(newVersion, META.versionCode)) {
+                        newVersionFlow.value = null
+                        checkMessageFlow.value = "当前已是最新版本（v${META.versionName}）"
+                        if (manual) showCheckMessage(loc)
                         return@tryWithStateLock
                     }
+                    checkMessageFlow.value = "发现新版本 v${newVersion.versionName}"
                     if (
                         !manual &&
-                        ignoreVersionListFlow.value.contains(newVersion.versionCode)
+                        (!AppStore.storeFlow.value.autoCheckAppUpdate ||
+                            ignoreVersionListFlow.value.contains(newVersion.versionCode))
                     ) return@tryWithStateLock
                     newVersionFlow.value = newVersion
                 }
             } catch (e: CancellationException) {
+                // A bounded network timeout is a failed check, not a latest-version result.
+                if (e is kotlinx.coroutines.TimeoutCancellationException) {
+                    checkMessageFlow.value = "检查更新超时，请稍后重试"
+                    if (manual) showCheckMessage(loc)
+                }
                 throw e
             } catch (e: Exception) {
+                checkMessageFlow.value = "检查更新失败，请检查网络后重试"
                 if (manual) {
-                    toast(e.message ?: e.stackTraceToString(), loc = "")
+                    showCheckMessage(loc)
                 }
                 throw e
             }
         }
     }
 
+    private fun showCheckMessage(loc: String) {
+        val message = checkMessageFlow.value ?: return
+        runMainPost { toast(message, loc = loc) }
+    }
+
     private fun startDownload(newVersion: NewVersion) {
-        if (downloadStatusFlow.value is LoadStatus.Loading) return
+        if (downloadStatusFlow.value is LoadStatus.Loading || downloadJob?.isCompleted == false) return
         downloadStatusFlow.value = LoadStatus.Loading(0f)
-        val apkFile = FolderUtils.sharedDir.resolve("gkd-v${newVersion.versionCode}.apk").apply {
+        val apkFile = FolderUtils.sharedDir.resolve("XAdSkip-v${newVersion.versionCode}.apk").apply {
             if (exists()) {
                 delete()
             }
         }
         downloadJob = scope.launch(Dispatchers.IO) {
             try {
-                val channel =
-                    client.get(URI(UPDATE_URL).resolve(newVersion.downloadUrl).toString()) {
+                val response =
+                    updateClient.get(XAdSkipUpdatePolicy.downloadUrl(newVersion)) {
                         onDownload { bytesSentTotal, _ ->
+                            require(bytesSentTotal <= newVersion.fileSize) { "安装包大小与更新信息不一致" }
                             val downloadStatus = downloadStatusFlow.value
                             if (downloadStatus is LoadStatus.Loading) {
                                 downloadStatusFlow.value = LoadStatus.Loading(
-                                    bytesSentTotal.toFloat() / (newVersion.fileSize)
+                                    (bytesSentTotal.toFloat() / newVersion.fileSize).coerceIn(0f, 1f)
                                 )
                             } else if (downloadStatus is LoadStatus.Failure) {
                                 // 提前终止下载
                                 downloadJob?.cancel()
                             }
                         }
-                    }.bodyAsChannel()
+                    }
+                require(response.status.value == 200) { "安装包下载失败，请稍后重试" }
+                val channel = response.bodyAsChannel()
                 if (downloadStatusFlow.value is LoadStatus.Loading) {
                     channel.copyAndClose(apkFile.writeChannel())
+                    XAdSkipUpdatePolicy.verifyDownload(newVersion, apkFile)
+                    currentCoroutineContext().ensureActive()
                     downloadStatusFlow.value = LoadStatus.Success(apkFile)
                 }
+            } catch (e: CancellationException) {
+                apkFile.delete()
+                throw e
             } catch (e: Exception) {
+                apkFile.delete()
                 if (downloadStatusFlow.value is LoadStatus.Loading) {
                     downloadStatusFlow.value = LoadStatus.Failure(e)
                 }
@@ -161,7 +205,7 @@ class UpdateStatus(val scope: CoroutineScope) {
     @Composable
     fun UpgradeDialog() {
         newVersionFlow.collectAsStateWithLifecycle().value?.let { newVersionVal ->
-            val text = remember {
+            val text = remember(newVersionVal) {
                 val logs = newVersionVal.versionLogs.takeWhile { v ->
                     v.code > META.versionCode
                 }
@@ -178,7 +222,7 @@ class UpdateStatus(val scope: CoroutineScope) {
             val scrollState = rememberScrollState()
             AppAlertDialog(
                 title = {
-                    Text(text = "新版本")
+                    Text(text = "XAdSkip 有新版本")
                 },
                 text = {
                     Text(
@@ -230,9 +274,8 @@ class UpdateStatus(val scope: CoroutineScope) {
                         onDismissRequest = {},
                         confirmButton = {
                             TextButton(onClick = {
-                                downloadStatusFlow.value = LoadStatus.Failure(
-                                    Exception("终止下载")
-                                )
+                                downloadJob?.cancel()
+                                downloadStatusFlow.value = null
                             }) {
                                 Text(text = "终止下载")
                             }

@@ -23,8 +23,8 @@ def main():
     snapshots = json.loads((ROOT / "rules/community-snapshots.json").read_text(encoding="utf-8"))["sources"]
     expected = {}
     notice = ["XAdSkip 内置社区规则 / Bundled community subscriptions", "",
-              "原始规则与署名按各来源许可证保留。导入后使用独立订阅标识，关闭网络更新。",
-              "Original rules and notices are preserved. Imported copies use separate IDs and offline updates.", ""]
+              "原始规则与署名按各来源许可证保留。内置副本使用独立订阅标识，随应用升级刷新，保留用户开关；关闭网络更新。",
+              "Original rules and notices are preserved. Bundled copies use separate IDs, refresh with app updates, and preserve user settings; network updates are disabled.", ""]
     for name in ("ganlinte", "aoguai"):
         source = upstream[name]
         snapshot = snapshots[name]

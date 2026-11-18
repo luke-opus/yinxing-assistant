@@ -35,9 +35,9 @@ object XAdSkipRulePack {
         readAsset: (String) -> String,
     ): PreparedImport? {
         if (initialized || existingItems.isNotEmpty()) return null
-        // Of the bundled snapshots, Ganlin covers the most apps and rule groups.
-        val pack = Community.GANLIN
-        val subscription = prepareCommunity(readAsset(pack.assetPath), pack)
+        val subscription = Community.entries
+            .map { pack -> prepareCommunity(readAsset(pack.assetPath), pack) }
+            .maxWith(compareBy<RawSubscription> { it.groupsSize }.thenBy { it.apps.size })
         return PreparedImport(
             subscription = subscription,
             item = SubsItem(
@@ -60,6 +60,16 @@ object XAdSkipRulePack {
             updateUrl = null,
             checkUpdateUrl = null,
         )
+    }
+
+    /** Refresh only our existing bundled copies; local and user-added subscriptions stay untouched. */
+    fun prepareBundledUpgrade(
+        current: RawSubscription,
+        readAsset: (String) -> String,
+    ): RawSubscription? {
+        val pack = Community.entries.find { it.subscriptionId == current.id } ?: return null
+        val bundled = prepareCommunity(readAsset(pack.assetPath), pack)
+        return bundled.takeIf { it.version > current.version }
     }
 
     suspend fun importCommunity(pack: Community): Boolean = withContext(Dispatchers.IO) {

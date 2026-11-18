@@ -70,9 +70,11 @@ object A11yRuntime {
         service?.ruleEngine?.onScreenForcedActive()
     }
 
-    fun performActionBack(): Boolean {
+    fun performActionBack(beforeDispatch: () -> Unit = {}): Boolean {
+        beforeDispatch()
         val result = privilegeContextFlow.value?.keyevent(KeyEvent.KEYCODE_BACK)
         if (result == true) return true
+        beforeDispatch()
         return A11yService.instance?.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK) == true
     }
 

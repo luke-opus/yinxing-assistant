@@ -1,12 +1,15 @@
 package li.gkd.app.data
 
 import android.accessibilityservice.GestureDescription
+import android.accessibilityservice.AccessibilityService
 import android.graphics.Path
 import android.view.ViewConfiguration
 import android.view.accessibility.AccessibilityNodeInfo
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import li.gkd.app.a11y.A11yRuntime
+import li.gkd.app.a11y.GestureCompletion
+import li.gkd.app.a11y.RuleActionExecution
 import li.gkd.app.priv.privilegeContextFlow
 import li.gkd.app.priv.toHidden
 import li.gkd.app.service.A11yService
@@ -42,6 +45,7 @@ sealed class ActionPerformer(val action: String) {
             node: AccessibilityNodeInfo,
             locationProps: RawSubscription.LocationProps,
         ): ActionResult {
+            RuleActionExecution.checkCanDispatch()
             TrackService.addA11yNodePosition(node)
             return ActionResult(
                 action = action,
@@ -66,6 +70,7 @@ sealed class ActionPerformer(val action: String) {
                     position = x to y,
                 )
             }
+            RuleActionExecution.checkCanDispatch()
             TrackService.addXyPosition(x, y)
             return ActionResult(
                 action = action,
@@ -82,9 +87,9 @@ sealed class ActionPerformer(val action: String) {
                             path, 0, ViewConfiguration.getTapTimeout().toLong()
                         )
                     )
-                    A11yService.instance?.dispatchGesture(
-                        gestureDescription.build(), null, null
-                    ) != null
+                    dispatchGestureAndWait(
+                        gestureDescription.build(), ViewConfiguration.getTapTimeout().toLong(),
+                    )
                 },
                 position = x to y
             )
@@ -111,6 +116,7 @@ sealed class ActionPerformer(val action: String) {
             node: AccessibilityNodeInfo,
             locationProps: RawSubscription.LocationProps,
         ): ActionResult {
+            RuleActionExecution.checkCanDispatch()
             TrackService.addA11yNodePosition(node)
             return ActionResult(
                 action = action,
@@ -141,6 +147,7 @@ sealed class ActionPerformer(val action: String) {
                     position = x to y,
                 )
             }
+            RuleActionExecution.checkCanDispatch()
             TrackService.addXyPosition(x, y)
             return ActionResult(
                 action = action,
@@ -157,13 +164,7 @@ sealed class ActionPerformer(val action: String) {
                             path, 0, LONG_DURATION
                         )
                     )
-                    (A11yService.instance?.dispatchGesture(
-                        gestureDescription.build(), null, null
-                    ) != null).apply {
-                        if (this) {
-                            delay(LONG_DURATION.milliseconds)
-                        }
-                    }
+                    dispatchGestureAndWait(gestureDescription.build(), LONG_DURATION)
                 },
                 position = x to y
             )
@@ -192,7 +193,7 @@ sealed class ActionPerformer(val action: String) {
         ): ActionResult {
             return ActionResult(
                 action = action,
-                result = A11yRuntime.performActionBack()
+                result = A11yRuntime.performActionBack(RuleActionExecution.dispatchGuard())
             )
         }
     }
@@ -238,6 +239,7 @@ sealed class ActionPerformer(val action: String) {
                     position = endX to endY,
                 )
             }
+            RuleActionExecution.checkCanDispatch()
             TrackService.addSwipePosition(startX, startY, endX, endY, swipeArg.duration)
             return if (
                 privilegeContextFlow.value?.swipe(
@@ -266,13 +268,9 @@ sealed class ActionPerformer(val action: String) {
                 )
                 ActionResult(
                     action = action,
-                    result = (A11yService.instance?.dispatchGesture(
-                        gestureDescription.build(), null, null
-                    ) != null).apply {
-                        if (this) {
-                            delay(swipeArg.duration.milliseconds)
-                        }
-                    },
+                    result = dispatchGestureAndWait(
+                        gestureDescription.build(), swipeArg.duration,
+                    ),
                     position = endX to endY,
                 )
             }
@@ -297,5 +295,30 @@ sealed class ActionPerformer(val action: String) {
         fun getAction(action: String?): ActionPerformer {
             return allSubObjects.find { it.action == action } ?: Click
         }
+    }
+}
+
+private suspend fun dispatchGestureAndWait(
+    gesture: GestureDescription,
+    durationMillis: Long,
+): Boolean {
+    RuleActionExecution.checkCanDispatch()
+    return GestureCompletion.awaitResult(
+        // The final callback may be delayed by the system, but must never stall matching forever.
+        timeoutMillis = durationMillis.coerceIn(0L, 60_000L) + 2_000L,
+    ) { complete ->
+        A11yService.instance?.dispatchGesture(
+            gesture,
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    complete(true)
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    complete(false)
+                }
+            },
+            null,
+        ) == true
     }
 }

@@ -2,9 +2,9 @@
 
 ## GKD 社区规则快照
 
-`third_party/gkd-subscriptions/ganlinte/` 保存甘霖 v71 的完整源码快照（MIT）；`third_party/gkd-subscriptions/aoguai/` 保存奥怪 v88 的完整源码快照（GPL-3.0-only）。原许可证、贡献者署名、README、奥怪的 LEGAL.md 和全部原始文件均保留。确切提交和逐文件 SHA-256 见 `UPSTREAM.json` 与 `rules/community-snapshots.json`。
+当前随包为甘霖 v72（MIT）和奥怪 v89（GPL-3.0-only），对应固定提交的完整源码及发布文件保存于 `third_party/gkd-subscriptions/releases/`。原订阅、许可证、作者署名、README 和奥怪 LEGAL.md 均按原始字节保留。历史 v71/v88 完整源码快照保留在原目录；v72/v89 的 src、构建脚本和声明已一并保存，未运行上游代码。确切提交与逐文件 SHA-256 见 `UPSTREAM.json` 和 `rules/community-snapshots.json`。
 
-自 0.2.0-dev 起，两套原始订阅文件、原 README、许可证和奥怪 LEGAL.md 随 APK 保存于 `assets/xadskip/community/`，由 `tools/bundle_community_rules.py` 按固定快照复制。应用内导入时使用独立订阅 ID、清除更新地址并关闭订阅及自动更新；原规则、作者、版本和规则组开关均保留。来源、统计及后续更新步骤见 [COMMUNITY_SOURCES.md](COMMUNITY_SOURCES.md)。
+两套订阅及声明通过 `tools/bundle_community_rules.py` 保存于 APK 的 `assets/xadskip/community/`。新安装默认启用规则组最多的一套；原规则组默认开关不变。内置副本使用独立订阅 ID，关闭网络更新；应用升级时刷新已有内置副本，保留用户启用状态和规则组配置。其他订阅及自定义规则不参与刷新。来源和数量见 [COMMUNITY_SOURCES.md](COMMUNITY_SOURCES.md)。
 
 ## 李跳跳社区规则迁移
 

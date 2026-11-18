@@ -26,6 +26,7 @@ object SubscriptionPersistence {
         subscription: RawSubscription,
         newItem: SubsItem? = null,
         insertItem: Boolean = false,
+        preserveGroupConfigs: Boolean = false,
     ) {
         val previousBytes = SubscriptionFileStore.readBytes(subscription.id)
         SubscriptionFileStore.write(subscription)
@@ -39,7 +40,9 @@ object SubscriptionPersistence {
                     }
                 }
                 Db.subsItemDao.updateMtime(subscription.id, System.currentTimeMillis())
-                cleanupConfigs(subscription)
+                if (!preserveGroupConfigs) {
+                    cleanupConfigs(subscription)
+                }
             }
         } catch (e: Throwable) {
             restoreFile(subscription.id, previousBytes, e)

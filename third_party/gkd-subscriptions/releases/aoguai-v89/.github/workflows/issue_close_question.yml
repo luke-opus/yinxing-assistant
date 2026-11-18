@@ -1,0 +1,27 @@
+name: Issue Close Question
+
+on:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  issue-close-require:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close inactive need info issues
+        uses: actions/stale@v10
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          only-labels: need info
+          days-before-issue-stale: -1
+          days-before-issue-close: 5
+          close-issue-message: |
+            This issue has been closed automatically because it has not had recent activity for 5 days. If you have any questions, please comment here.
+            由于该 Issue 5天未收到回应，现已被自动关闭，若有任何问题，可评论回复。
+          days-before-pr-stale: -1
+          days-before-pr-close: -1

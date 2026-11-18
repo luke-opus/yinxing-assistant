@@ -51,9 +51,7 @@ import li.gkd.app.ui.style.cardHorizontalPadding
 import li.gkd.app.ui.style.itemHorizontalPadding
 import li.gkd.app.ui.style.surfaceCardColors
 import li.gkd.app.util.AutomatorModeOption
-import li.gkd.app.util.ShortUrlSet
 import li.gkd.app.ui.share.launchUiAction
-import li.gkd.app.util.IntentUtils
 import li.gkd.app.util.throttle
 import li.gkd.app.util.ToastUtils.toast
 
@@ -144,10 +142,10 @@ fun WorkModePage() {
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             TextButton(
-                                onClick = throttle { IntentUtils.openA11ySettings() },
+                                onClick = throttle { mainVm.requestA11ySetup() },
                             ) {
                                 Text(
-                                    text = "手动授权",
+                                    text = "开启 XAdSkip 辅助",
                                     style = MaterialTheme.typography.bodyLarge,
                                 )
                             }
@@ -155,11 +153,20 @@ fun WorkModePage() {
                                 modifier = Modifier
                                     .padding(bottom = 12.dp)
                                     .clip(MaterialTheme.shapes.extraSmall)
-                                    .clickable(onClick = throttle {
-                                        mainVm.navigateWebPage(ShortUrlSet.URL2)
-                                    })
+                                    .clickable(onClick = throttle(vm.scope.launchUiAction {
+                                        if (mainVm.dialogRequests.confirm(
+                                                title = "XAdSkip 开启指南",
+                                                text = "1. 点“前往开启”，进入手机的无障碍设置。\n2. 选择“XAdSkip”（部分手机在“已下载的应用”里）。\n3. 打开“使用 XAdSkip”，阅读并确认系统提示。\n\n返回首页显示“已开启”后即可使用，规则已内置。\n\n如果提示“受限设置”，请返回首页点“无法开启？”。\n\n开启后会读取屏幕并按规则自动点击，您可随时在首页暂停。",
+                                                confirmText = "前往开启",
+                                                dismissText = "返回",
+                                                dismissOnRequest = true,
+                                            )
+                                        ) {
+                                            mainVm.requestA11ySetup()
+                                        }
+                                    }))
                                     .padding(horizontal = 4.dp),
-                                text = "无障碍帮助（GKD 上游参考）",
+                                text = "开启指南",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                             )

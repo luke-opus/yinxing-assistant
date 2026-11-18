@@ -46,6 +46,20 @@ class XAdSkipRulePackTest {
     }
 
     @Test
+    fun newInstallationSelectsTheBundledSourceWithMostRuleGroups() {
+        val imported = requireNotNull(XAdSkipRulePack.prepareFirstRunImport(false, emptyList()) { path ->
+            val pack = XAdSkipRulePack.Community.entries.single { it.assetPath == path }
+            val groupCount = if (pack == XAdSkipRulePack.Community.AOGUAI) 2 else 1
+            val groups = (1..groupCount).joinToString(",") { key ->
+                "{key:$key,name:'测试规则$key',rules:'[text=\"跳过\"]'}"
+            }
+            "{id:${pack.upstreamId},name:'测试订阅',version:1,apps:[{id:'example.app',groups:[$groups]}]}"
+        })
+        assertEquals(XAdSkipRulePack.Community.AOGUAI.subscriptionId, imported.subscription.id)
+        assertTrue(imported.item.enable)
+    }
+
+    @Test
     fun upgradingAnExistingInstallationPreservesItsSubscriptionsAndDisabledState() {
         val existingConfigurations = listOf(
             listOf(SubsItem(id = LOCAL_SUBS_ID, order = 0)),
@@ -105,6 +119,39 @@ class XAdSkipRulePackTest {
                 source(XAdSkipRulePack.Community.GANLIN),
                 XAdSkipRulePack.Community.AOGUAI,
             )
+        }
+    }
+
+    @Test
+    fun existingOfflineCopyReceivesNewBundledVersionAfterFirstRun() {
+        XAdSkipRulePack.Community.entries.forEach { pack ->
+            val bundled = XAdSkipRulePack.prepareCommunity(source(pack), pack)
+            val previous = bundled.copy(version = bundled.version - 1)
+            val upgraded = requireNotNull(XAdSkipRulePack.prepareBundledUpgrade(previous) { source(pack) })
+            assertEquals(previous.id, upgraded.id)
+            assertEquals(bundled.version, upgraded.version)
+            assertEquals(bundled.apps, upgraded.apps)
+            assertEquals(bundled.globalGroups, upgraded.globalGroups)
+            assertNull(upgraded.updateUrl)
+        }
+    }
+
+    @Test
+    fun equalOrNewerOfflineCopyIsNotRewrittenOrDowngraded() {
+        val pack = XAdSkipRulePack.Community.GANLIN
+        val bundled = XAdSkipRulePack.prepareCommunity(source(pack), pack)
+        listOf(bundled, bundled.copy(version = bundled.version + 1)).forEach { existing ->
+            assertNull(XAdSkipRulePack.prepareBundledUpgrade(existing) { source(pack) })
+        }
+    }
+
+    @Test
+    fun bundledUpgradeNeverTouchesLocalDraftOrUserAddedSubscriptions() {
+        listOf(LOCAL_SUBS_ID, XAdSkipConfig.draftSubscriptionId, 42L).forEach { id ->
+            val custom = RawSubscription(id = id, name = "自定义规则", version = 0)
+            assertNull(XAdSkipRulePack.prepareBundledUpgrade(custom) {
+                error("A user subscription must not read or be replaced by a bundled asset")
+            })
         }
     }
 }

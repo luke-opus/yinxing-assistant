@@ -20,6 +20,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -42,6 +43,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import kotlinx.serialization.Serializable
 import li.gkd.app.data.date
+import li.gkd.app.a11y.ActionLogRecording
 import li.gkd.app.data.showActivityId
 import li.gkd.app.ui.component.AppNameText
 import li.gkd.app.ui.AppConfigRoute
@@ -83,6 +85,7 @@ fun ActionLogPage(route: ActionLogRoute) {
     val mainVm = LocalMainViewModel.current
     val vm = viewModel { ActionLogVm(route) }
     val dialogState by vm.dialogStateFlow.collectAsStateWithLifecycle()
+    val lastWriteFailed by ActionLogRecording.lastWriteFailedFlow.collectAsStateWithLifecycle()
     val scope = vm.scope
     val list = vm.pagingDataFlow.collectAsLazyPagingItems()
     val pageScrollState = rememberListScrollState()
@@ -155,6 +158,15 @@ fun ActionLogPage(route: ActionLogRoute) {
             modifier = Modifier.scaffoldPadding(contentPadding),
             state = listState,
         ) {
+            if (lastWriteFailed) {
+                item("write-failure") {
+                    Text(
+                        text = "触发记录保存失败，部分记录可能缺失。请检查手机可用空间。",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(itemHorizontalPadding),
+                    )
+                }
+            }
             items(
                 count = list.itemCount,
                 key = list.itemKey { item -> item.actionLog.id }
@@ -180,8 +192,20 @@ fun ActionLogPage(route: ActionLogRoute) {
             }
             item(ListPlaceholder.KEY, ListPlaceholder.TYPE) {
                 Spacer(modifier = Modifier.height(EmptyHeight))
-                if (list.itemCount == 0 && list.loadState.refresh !is LoadState.Loading) {
-                    EmptyText(text = "暂无数据")
+                when (list.loadState.refresh) {
+                    is LoadState.Error -> {
+                        EmptyText(text = "触发记录加载失败，请重试")
+                        TextButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { list.retry() },
+                        ) { Text("重试") }
+                    }
+                    is LoadState.NotLoading -> {
+                        if (list.itemCount == 0) {
+                            EmptyText(text = "暂无触发记录；成功执行规则后会自动记录")
+                        }
+                    }
+                    is LoadState.Loading -> Unit
                 }
             }
         }
