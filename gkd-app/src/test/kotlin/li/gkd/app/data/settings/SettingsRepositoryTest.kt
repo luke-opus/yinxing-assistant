@@ -24,6 +24,36 @@ import java.nio.file.Files
 
 class SettingsRepositoryTest {
     @Test
+    fun oldOptionalNotificationIsDisabledButLaterAdvancedOptInSurvivesRestart() = runBlocking {
+        val directory = Files.createTempDirectory("gkd-notification-migration-test").toFile()
+        val writer = SupervisorJob()
+        val reader = SupervisorJob()
+        try {
+            directory.resolve("store.json").writeText(
+                json.encodeToString(testDefaults().copy(enableStatusService = true)),
+            )
+            val repository = SettingsRepository(
+                directory, CoroutineScope(writer + Dispatchers.Default), ::testDefaults, ::emptySet,
+            )
+            assertFalse(repository.settings.value.enableStatusService)
+            assertEquals(1, repository.settings.value.statusNotificationPolicyVersion)
+            repository.updateSettings { it.copy(enableStatusService = true) }
+            withTimeout(5_000) {
+                while (json.decodeFromString<SettingsStore>(directory.resolve("store.json").readText())
+                        .statusNotificationPolicyVersion != 1) delay(10)
+            }
+            val recreated = SettingsRepository(
+                directory, CoroutineScope(reader + Dispatchers.Default), ::testDefaults, ::emptySet,
+            )
+            assertTrue(recreated.settings.value.enableStatusService)
+        } finally {
+            writer.cancelAndJoin()
+            reader.cancelAndJoin()
+            directory.deleteRecursively()
+        }
+    }
+
+    @Test
     fun explicitUpdateChangesStateAndSurvivesRepositoryRecreation() = runBlocking {
         val directory = Files.createTempDirectory("gkd-settings-test").toFile()
         val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

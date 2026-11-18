@@ -53,7 +53,6 @@ import li.gkd.app.ui.style.surfaceCardColors
 import li.gkd.app.util.AutomatorModeOption
 import li.gkd.app.ui.share.launchUiAction
 import li.gkd.app.util.throttle
-import li.gkd.app.util.ToastUtils.toast
 
 @Serializable
 data object WorkModeRoute : NavKey
@@ -66,6 +65,7 @@ fun WorkModePage() {
     val a11yRunning by A11yService.isRunning.collectAsStateWithLifecycle()
     val privilegeContext by privilegeContextFlow.collectAsStateWithLifecycle()
     val automatorMode by mainVm.automatorModeFlow.collectAsStateWithLifecycle()
+    val batteryUnrestricted by PermissionStates.ignoreBatteryOptimizations.stateFlow.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
         PerfTopAppBar(scrollBehavior = scrollBehavior, navigationIcon = {
@@ -145,7 +145,7 @@ fun WorkModePage() {
                                 onClick = throttle { mainVm.requestA11ySetup() },
                             ) {
                                 Text(
-                                    text = "开启 XAdSkip 辅助",
+                                    text = "开启 ${META.appName} 辅助",
                                     style = MaterialTheme.typography.bodyLarge,
                                 )
                             }
@@ -155,8 +155,8 @@ fun WorkModePage() {
                                     .clip(MaterialTheme.shapes.extraSmall)
                                     .clickable(onClick = throttle(vm.scope.launchUiAction {
                                         if (mainVm.dialogRequests.confirm(
-                                                title = "XAdSkip 开启指南",
-                                                text = "1. 点“前往开启”，进入手机的无障碍设置。\n2. 选择“XAdSkip”（部分手机在“已下载的应用”里）。\n3. 打开“使用 XAdSkip”，阅读并确认系统提示。\n\n返回首页显示“已开启”后即可使用，规则已内置。\n\n如果提示“受限设置”，请返回首页点“无法开启？”。\n\n开启后会读取屏幕并按规则自动点击，您可随时在首页暂停。",
+                                                title = "${META.appName} 开启指南",
+                                                text = "1. 点“前往开启”，进入手机的无障碍设置。\n2. 选择“${META.appName}”（部分手机在“已下载的应用”里）。\n3. 打开“使用 ${META.appName}”，阅读并确认系统提示。\n\n返回首页显示“已开启”后即可使用，规则已内置。\n\n如果提示“受限设置”，请返回首页点“无法开启？”。\n\n开启后会读取屏幕并按规则自动点击，您可随时在首页暂停。",
                                                 confirmText = "前往开启",
                                                 dismissText = "返回",
                                                 dismissOnRequest = true,
@@ -207,23 +207,33 @@ fun WorkModePage() {
                         )
                     }
                 )
+                Text(
+                    modifier = Modifier.padding(horizontal = cardHorizontalPadding)
+                        .padding(start = 4.dp, top = 12.dp),
+                    text = "后台运行",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                TextListItem(
+                    modifier = Modifier.padding(horizontal = cardHorizontalPadding)
+                        .padding(start = 8.dp, top = 4.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    list = listOf(
+                        "普通辅助不再显示额外常驻通知；快照、调试等前台服务仍需系统通知。",
+                        "将省电策略设为不限制，并在手机支持时允许自启动、锁定最近任务，可降低后台中断概率。",
+                        "可在下拉面板的快捷开关编辑中添加“${META.appName}”，方便返回检查状态。",
+                        "系统仍可能停止应用。手动强行停止、撤销权限或重启手机后，请重新打开应用确认状态。",
+                    ),
+                )
                 TextButton(
-                    modifier = Modifier
-                        .padding(horizontal = cardHorizontalPadding),
+                    modifier = Modifier.padding(horizontal = cardHorizontalPadding),
+                    enabled = !batteryUnrestricted,
                     onClick = throttle(vm.scope.launchUiAction {
-                        if (!writeSecureSettings) {
-                            toast("请先授予「${PermissionStates.writeSecureSettings.name}」")
-                        }
-                        mainVm.dialogRequests.showMessage(
-                            title = "无感保活",
-                            text = "添加通知栏快捷开关\n\n1. 下拉通知栏至「快捷开关」标界面\n2. 找到名称为 ${META.appName} 的快捷开关\n3. 添加此开关到通知面板 \n\n只要此快捷开关在通知面板可见\n无论是系统杀后台还是自身崩溃\n简单下拉打开通知即可重启"
+                        mainVm.permissionRequests.ensurePermissions(
+                            PermissionStates.ignoreBatteryOptimizations,
                         )
-                    })
+                    }),
                 ) {
-                    Text(
-                        text = "无感保活",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                    Text(if (batteryUnrestricted) "已允许忽略系统电池优化" else "允许后台运行")
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }

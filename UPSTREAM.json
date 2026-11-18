@@ -35,7 +35,7 @@
       "fileCount": 643,
       "fileManifest": "rules/community-snapshots.json",
       "importMethod": "Complete unmodified codeload source snapshot at the published release commit; no upstream code executed or Git history imported",
-      "appIntegration": "Largest bundled rule set enabled only for new installs; existing bundled IDs refreshed on APK upgrade while subscription and group settings are preserved; network rule updates disabled",
+      "appIntegration": "Pinned source for the unified rule library; first-party signed updates, stable source mapping, existing user switches/exclusions preserved; no direct upstream auto-update",
       "importedSubscriptionId": 2026091302,
       "bundledAsset": "gkd-app/src/main/assets/xadskip/community/ganlinte/ganlin_gkd.json5",
       "historicalSourceSnapshot": {
@@ -80,7 +80,7 @@
       "fileCount": 105,
       "fileManifest": "rules/community-snapshots.json",
       "importMethod": "Complete unmodified codeload source snapshot at the published release commit; no upstream code executed or Git history imported",
-      "appIntegration": "Largest bundled rule set enabled only for new installs; existing bundled IDs refreshed on APK upgrade while subscription and group settings are preserved; network rule updates disabled",
+      "appIntegration": "Pinned source for the unified rule library; first-party signed updates, stable source mapping, existing user switches/exclusions preserved; no direct upstream auto-update",
       "importedSubscriptionId": 2026091303,
       "bundledAsset": "gkd-app/src/main/assets/xadskip/community/aoguai/aoguai_gkd.json5",
       "historicalSourceSnapshot": {
@@ -111,5 +111,27 @@
       "archiveUrl": "https://codeload.github.com/aoguai/subscription/zip/e0ad57290fed632e7305f67f92fcca8e775fb825",
       "archiveSha256": "61f76fdef5ff0cffce83fd11f4c2cf9234948e12e06d3067eb092e7104ca0a43"
     }
+  },
+  "unifiedRules": {
+    "name": "银杏助手统一规则",
+    "subscriptionId": 2026111801,
+    "version": 1,
+    "schemaVersion": 1,
+    "sources": [
+      "ganlinte v72",
+      "aoguai v89",
+      "LiTiaotiao converted drafts v1"
+    ],
+    "asset": "gkd-app/src/main/assets/xadskip/unified/rules.json",
+    "sha256": "f1570e791407b090a91ab8f84af4b8adf6521ac65b2db5a70d50aacd45fa2420",
+    "bytes": 1977337,
+    "applicationCount": 774,
+    "appGroupCount": 2343,
+    "globalGroupCount": 12,
+    "report": "rules/unified-report.json",
+    "identityLedger": "rules/unified-identities.json",
+    "generator": "tools/build_unified_rules.py",
+    "licenses": "MIT / GPL-3.0-only / AGPL-3.0; original notices preserved; combined rule distribution observes AGPL and applicable original terms",
+    "updateManifest": "https://xadskip.com/rules/stable/manifest.json"
   }
 }

@@ -23,7 +23,7 @@ class RuleActionExecutionTest {
     private fun sourceRecord(): ActionLog {
         val subscription = RawSubscription.parse(
             """{id: 7, name: 'Test', version: 1, apps: [{id: 'source.app', groups: [
-                {key: 1, name: 'Skip', rules: [{key: 2, matches: '[text="跳过"]'}]}
+                {key: 1, name: 'Skip', rules: [{key: 2, name: 'Close launch screen', matches: '[text="跳过"]'}]}
             ]}]}""",
         )
         val summary = RuleSummaryBuilder.build(
@@ -34,7 +34,7 @@ class RuleActionExecutionTest {
             categoryConfigs = emptyList(),
         )
         val rule = summary.appIdToRules.getValue("source.app").single()
-        return RuleActionExecution.capture(rule, TopActivity("source.app", "source.app.Ad"), 123)
+        return RuleActionExecution.capture(rule, TopActivity("source.app", "source.app.Ad"), 123, "Source app")
     }
 
     @Test
@@ -55,6 +55,25 @@ class RuleActionExecutionTest {
         assertEquals("source.app.Ad", recorded.single().activityId)
         assertEquals(123L, recorded.single().ctime)
         assertEquals(2, recorded.single().ruleKey)
+        assertEquals("Source app", recorded.single().appName)
+        assertEquals("Test", recorded.single().subsName)
+        assertEquals("Skip", recorded.single().groupName)
+        assertEquals("Close launch screen", recorded.single().ruleName)
+        assertEquals("clickNode", recorded.single().action)
+    }
+
+    @Test
+    fun firstSuccessRecordsActualFallbackAndCoordinatesWithoutOpeningLogPage() = runBlocking {
+        val recorded = mutableListOf<ActionLog>()
+        RuleActionExecution.execute(
+            record = sourceRecord(),
+            perform = { ActionResult("clickCenter", true, position = 720f to 84f) },
+            onSuccess = { record, _ -> recorded.add(record) },
+        )
+        assertEquals(1, recorded.size)
+        assertEquals("clickCenter", recorded.single().action)
+        assertEquals(720f, recorded.single().positionX)
+        assertEquals(84f, recorded.single().positionY)
     }
 
     @Test
@@ -89,7 +108,7 @@ class RuleActionExecutionTest {
             parent.cancel()
             completed.complete(Unit)
             job.join()
-            assertEquals(listOf(origin), recorded)
+            assertEquals(listOf(origin.copy(action = "clickCenter")), recorded)
             assertFalse(nextActionStarted)
         }
     }

@@ -22,6 +22,15 @@ object XAdSkipUpdatePolicy {
     fun isNewer(version: NewVersion, installedCode: Int): Boolean =
         validate(version).versionCode > installedCode
 
+    fun availableVersion(
+        version: NewVersion?,
+        installedCode: Int,
+        ignoredCodes: Set<Int>,
+    ): NewVersion? = version?.takeIf {
+        runCatching { isNewer(it, installedCode) && it.versionCode !in ignoredCodes }
+            .getOrDefault(false)
+    }
+
     fun downloadUrl(version: NewVersion): String {
         val uri = URI(XAdSkipConfig.updateManifestUrl).resolve(version.downloadUrl)
         require(
@@ -34,7 +43,7 @@ object XAdSkipUpdatePolicy {
     }
 
     fun shouldAutoCheck(enabled: Boolean, lastCheckedAt: Long, now: Long): Boolean =
-        enabled && (lastCheckedAt <= 0 || now < lastCheckedAt || now - lastCheckedAt >= 86_400_000L)
+        enabled && (lastCheckedAt <= 0 || now < lastCheckedAt || now - lastCheckedAt >= 900_000L)
 
     fun verifyDownload(version: NewVersion, file: File) {
         validate(version)

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="银杏助手许愿池：说说你希望怎样改进，查看审核公开后的愿望和开发进度。文字即可提交，图片和视频可选。">
+  <meta name="theme-color" content="#176952">
+  <title>许愿池 · 银杏助手</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="wishes.css">
+  <script src="wishes.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到许愿池</a>
+  <header class="site-header">
+    <a class="brand" href="https://xadskip.com/"><img class="mark" src="icon.svg" alt="" width="43" height="43">银杏助手</a>
+    <nav class="wish-nav" aria-label="页面导航"><a href="./">问题反馈</a><a href="https://xadskip.com/">返回首页</a></nav>
+  </header>
+  <main id="main">
+    <div class="intro">
+      <p class="eyebrow">一起把银杏助手做得更好用</p>
+      <h1>你来许愿，<br><span>我们认真看。</span></h1>
+      <p class="lead">希望界面长什么样，或哪一步能更简单？<br>写几句话就可以，图片和短视频也欢迎。</p>
+      <p class="expectation">愿望会先由开发者审核，再公开进度。收下建议不代表已经承诺实现；完成后会标记「已完成 ✓」，并说明改了什么。</p>
+    </div>
+
+    <section class="form-card" aria-labelledby="form-title">
+      <div id="form-panel">
+        <h2 id="form-title">写下你的愿望</h2>
+        <p class="form-intro">不用注册，只写文字也可以。</p>
+        <noscript><p class="notice error">请启用 JavaScript 后刷新，才能提交愿望和查看公开进度。此时不会上传任何内容。</p></noscript>
+        <form id="wish-form" action="/api/wishes" method="post" enctype="multipart/form-data">
+          <fieldset id="wish-fields" class="form-fields" disabled>
+            <legend class="visually-hidden">填写愿望并选择附件</legend>
+            <div class="field">
+              <label for="description">你希望怎样改进？<span class="required">必填</span></label>
+              <textarea id="description" name="description" rows="5" maxlength="5000" required placeholder="例如：希望首页按钮再大一点，家人设置好后，老人只需点一次。也可以描述你想看到的界面样子。" aria-describedby="description-help"></textarea>
+              <p id="description-help" class="format-help">最多 5000 字。请不要写入手机号、账号、验证码等个人信息。</p>
+            </div>
+            <details class="optional-media">
+              <summary>添加图片或视频<span class="optional">选填</span></summary>
+              <div class="attachment-section">
+                <p id="attachment-help" class="field-help">最多 3 张 JPG、PNG 或 WebP 图片，每张不超过 8 MB；最多 1 段 MP4 或 WebM 视频，不超过 60 秒、30 MB。附件合计不超过 60 MB。</p>
+                <div class="privacy-reminder"><strong>附件默认不公开</strong><p>可画出你希望的界面，或录下不方便的操作。先遮盖姓名、头像、聊天、账号和通知中的个人信息，再选择文件。</p></div>
+                <div class="file-actions">
+                  <button id="choose-images" class="button secondary" type="button" aria-describedby="attachment-help">＋ 添加图片</button>
+                  <button id="choose-video" class="button quiet" type="button" aria-describedby="attachment-help">添加短视频</button>
+                </div>
+                <input id="image-input" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple tabindex="-1" aria-label="选择愿望图片">
+                <input id="video-input" class="visually-hidden" type="file" accept="video/mp4,video/webm,.mp4,.webm" tabindex="-1" aria-label="选择愿望视频">
+                <p id="attachment-status" class="attachment-status" role="status" aria-live="polite"></p>
+                <ul id="attachment-list" class="attachment-list" aria-label="已选择的附件"></ul>
+                <p class="local-note">发送前只在当前页面预览，不会自动上传。关闭页面会清空未发送内容。</p>
+              </div>
+            </details>
+            <div class="field">
+              <label for="email">联系邮箱<span class="optional">选填，不公开</span></label>
+              <input id="email" name="email" type="email" maxlength="254" placeholder="方便开发者需要补充信息时联系你" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false">
+            </div>
+            <div class="send-area">
+              <label class="consent"><input id="consent" name="consent" type="checkbox" value="true" required><span>我同意将本次内容用于评估和改进银杏助手。愿望文字经开发者审核、整理并去除个人信息后，可以连同处理进度和结果公开展示；附件和邮箱保持私有。我已检查并遮盖个人私密信息。</span></label>
+              <button id="submit-wish" class="button primary" type="submit">送出愿望 ↗</button>
+              <p class="send-help">图片和视频不会自动成为公开素材。删除或隐私咨询请联系 <a href="mailto:1345134186@qq.com">1345134186@qq.com</a>，并提供愿望编号。</p>
+            </div>
+          </fieldset>
+          <p id="submit-status" class="submit-status" role="status" aria-live="polite" tabindex="-1"></p>
+        </form>
+      </div>
+      <section id="success-panel" class="success-panel" aria-labelledby="success-title" hidden>
+        <span class="received-mark" aria-hidden="true">✉</span>
+        <h2 id="success-title" tabindex="-1">愿望已收到，等待审核</h2>
+        <p>这次提交已保存。开发者审核后，公开的愿望文字和进度才会出现在下方；附件和邮箱不公开。</p>
+        <p class="receipt">愿望编号：<strong id="wish-id"></strong></p>
+        <p class="field-help">请记下编号，方便补充信息或申请删除。收到愿望不代表已经完成或承诺实现。</p>
+        <div class="success-actions"><a class="button secondary" href="#public-wishes">看看公开进度</a><button id="send-another" class="button quiet" type="button">再许一个愿望</button></div>
+      </section>
+    </section>
+
+    <section id="public-wishes" class="public-wishes" aria-labelledby="public-title">
+      <div class="list-heading"><div><p class="eyebrow">公开的愿望与进度</p><h2 id="public-title">每一点改进，都看得见。</h2></div><button id="refresh-wishes" type="button" class="button quiet">刷新</button></div>
+      <p class="field-help">这里只展示开发者审核后的文字和处理结果。提交内容、附件或邮箱不会未经审核自动出现在这里。</p>
+      <div class="status-legend" aria-label="进度说明"><span class="wish-status pending">待处理</span><span class="wish-status planned">计划中</span><span class="wish-status completed">已完成 ✓</span></div>
+      <p id="list-status" class="list-status" role="status" aria-live="polite">正在读取公开愿望…</p>
+      <p id="list-empty" class="empty-wishes" hidden>还没有公开的愿望。提交后会先审核，审核通过的愿望才会出现在这里。</p>
+      <ol id="wish-list" class="wish-list" aria-label="审核公开的愿望" aria-busy="true"></ol>
+      <div class="list-actions"><button id="load-more" type="button" class="button quiet" hidden>查看更多愿望</button></div>
+    </section>
+    <p class="contact-note">遇到跳不过、误点或开启困难？请用 <a href="./">问题反馈</a>，便于更快排查。</p>
+  </main>
+  <footer><span>银杏助手 · 公益助老</span><a href="https://xadskip.com/">返回网站首页</a><a href="./">问题反馈</a></footer>
+</body>
+</html>

@@ -10,6 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import li.gkd.app.META
 import li.gkd.app.ui.component.AppAlertDialog
 
 /** Bundled app-specific notice, also available before accessibility is enabled. */
@@ -18,7 +19,7 @@ fun XAdSkipPrivacyDialog(visible: Boolean, onDismissRequest: () -> Unit) {
     if (visible) {
         AppAlertDialog(
             onDismissRequest = onDismissRequest,
-            title = { Text("XAdSkip 应用隐私说明") },
+            title = { Text("${META.appName}应用隐私说明") },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -35,19 +36,19 @@ fun XAdSkipPrivacyDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                     )
                     PrivacySection(
                         "联网功能",
-                        "内置甘霖规则从 APK 离线导入，不自动连接上游更新。同意首次使用说明后，应用启动时会向 xadskip.com 查询 XAdSkip 版本信息，成功查询后一天内不重复自动检查；可在关于页面关闭自动检查或手动检查。只有你选择下载更新时才下载安装包，安装仍需系统确认。你添加远程订阅后，应用会连接该地址下载规则，并可能按订阅更新设置再次连接；打开在线说明、规则图片或外部链接也会访问对应服务。服务提供方会接收完成请求所需的网络信息，例如 IP 地址。高级功能中的 HTTP 调试服务需要主动开启，会向能够连接该设备的客户端提供调试接口；不用时请关闭。",
+                        "内置规则库从 APK 离线准备，普通使用无需挑选来源或手动导入。同意首次使用说明后，进入应用会按检查间隔向 xadskip.com 查询统一规则库及软件版本；规则更新通过签名、内容与版本校验后自动应用，保留已有开关设置，失败时继续使用已有规则。软件版本的自动检查间隔至少 15 分钟，可在关于页面关闭或手动检查；只有你选择下载时才下载安装包，安装仍需系统确认。自行添加远程订阅后，应用会连接该地址下载规则，并可能按订阅更新设置再次连接；打开在线说明、规则图片或外部链接也会访问对应服务。完成这些请求所需的网络信息（例如 IP 地址）会由相应服务接收。高级功能中的 HTTP 调试服务需要主动开启，会向能够连接该设备的客户端提供调试接口；不用时请关闭。",
                     )
                     PrivacySection(
                         "导出、分享与反馈",
-                        "本版本不提供内置的日志或快照云上传功能。导出日志可能包含数据库、设置、订阅、运行与崩溃日志、应用列表和权限状态；快照文件可能含截图及界面节点。选择系统分享或邮件后，文件会交给你选择的应用或接收方。请先检查文件，删除或遮盖敏感内容，不要发送密码、验证码或无关身份证件。",
+                        "点击“反馈问题”会在浏览器打开 feedback.xadskip.com，只带本应用自身的版本名称与版本代码，用于预填版本信息；不会自动附加手机型号、设备标识、应用列表、日志或快照。是否反馈由你决定；反馈页面由你填写问题、选择并检查截图或短录屏，也可自行填写联系邮箱。只有确认并点击发送后，这些内容才上传至私有反馈服务，仅用于问题排查和规则维护；可联系 1345134186@qq.com 并提供反馈编号申请删除。导出日志可能包含数据库、设置、订阅、运行与崩溃日志、应用列表和权限状态；快照文件可能含截图及界面节点。选择系统分享或邮件后，文件会交给你选择的应用或接收方。请先检查文件，删除或遮盖敏感内容，不要发送密码、验证码或无关身份证件。",
                     )
                     PrivacySection(
                         "关闭与删除",
-                        "可以关闭单个订阅或规则、暂停自动操作，或在安卓系统设置中关闭 XAdSkip 无障碍权限。日志和快照可在相应记录页面删除；系统应用管理中的“清除存储”会重置本地应用数据。已保存到下载目录、已分享或已发送的副本需另行处理。",
+                        "可以关闭单个订阅或规则、暂停自动操作，或在安卓系统设置中关闭${META.appName}无障碍权限。日志和快照可在相应记录页面删除；系统应用管理中的“清除存储”会重置本地应用数据。已保存到下载目录、已分享或已发送的副本需另行处理。",
                     )
                     PrivacySection(
                         "项目与联系",
-                        "XAdSkip 是基于 GKD 的独立开源项目，不代表 GKD 或李跳跳原作者。应用问题、隐私咨询与删除请求请联系 1345134186@qq.com；发送邮件时，收件方会收到你的邮箱及主动提供的内容。",
+                        "${META.appName}（原名 XAdSkip）是基于 GKD 的独立开源项目，不代表 GKD 或李跳跳原作者。应用问题、隐私咨询与删除请求请联系 1345134186@qq.com；发送邮件时，收件方会收到你的邮箱及主动提供的内容。",
                     )
                 }
             },

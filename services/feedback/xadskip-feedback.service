@@ -1,0 +1,28 @@
+[Unit]
+Description=XAdSkip private feedback inbox
+After=network.target
+
+[Service]
+Type=simple
+User=xadskip-feedback
+Group=xadskip-feedback
+WorkingDirectory=/opt/xadskip-feedback
+Environment=XADSKIP_FEEDBACK_DATA=/var/lib/xadskip-feedback
+ExecStart=/usr/bin/python3 /opt/xadskip-feedback/feedback_server.py serve
+Restart=on-failure
+RestartSec=3
+UMask=0077
+StateDirectory=xadskip-feedback
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/xadskip-feedback
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=1G
+TasksMax=32
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

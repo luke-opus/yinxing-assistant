@@ -72,7 +72,7 @@ class UpdateStatus(val scope: CoroutineScope) {
     private val checkUpdatingMutex = MutexState()
     val checkUpdatingFlow
         get() = checkUpdatingMutex.state
-    private val newVersionFlow = MutableStateFlow<NewVersion?>(null)
+    private val dialogVersionFlow = MutableStateFlow<NewVersion?>(null)
     private val downloadStatusFlow = MutableStateFlow<LoadStatus<File>?>(null)
     private var downloadJob: Job? = null
     val checkMessageFlow: StateFlow<String?>
@@ -85,7 +85,19 @@ class UpdateStatus(val scope: CoroutineScope) {
             scope = scope,
         )
     }
-    private var lastManual = false
+    val availableVersionFlow: StateFlow<NewVersion?>
+        field: MutableStateFlow<NewVersion?> = FileStateStore.createTextFlow(
+            key = "xadskip_available_update.json",
+            decode = { text ->
+                XAdSkipUpdatePolicy.availableVersion(
+                    text?.let { runCatching { json.decodeFromString<NewVersion?>(it) }.getOrNull() },
+                    META.versionCode,
+                    ignoreVersionListFlow.value,
+                )
+            },
+            encode = { json.encodeToString(it) },
+            scope = scope,
+        )
 
     val canRecheck get() = AppStore.storeFlow.value.let { settings ->
         XAdSkipUpdatePolicy.shouldAutoCheck(
@@ -97,6 +109,21 @@ class UpdateStatus(val scope: CoroutineScope) {
 
     fun setAutoCheck(enabled: Boolean) {
         AppStore.updateSettings { it.copy(autoCheckAppUpdate = enabled) }
+        if (enabled) checkUpdate()
+    }
+
+    fun showAvailableUpdate() {
+        val version = availableVersionFlow.value ?: return
+        dialogVersionFlow.value = version
+    }
+
+    private fun ignoreVersion(version: NewVersion) {
+        ignoreVersionListFlow.update { it + version.versionCode }
+        if (availableVersionFlow.value?.versionCode == version.versionCode) {
+            availableVersionFlow.value = null
+        }
+        dialogVersionFlow.value = null
+        toast("已忽略此版本")
     }
 
     fun checkUpdate(
@@ -107,8 +134,11 @@ class UpdateStatus(val scope: CoroutineScope) {
         scope.launchLogged(Dispatchers.IO, loc = loc) {
             try {
                 checkUpdatingMutex.tryWithStateLock {
-                    lastManual = manual
+                    if (!manual && !canRecheck) return@tryWithStateLock
                     checkMessageFlow.value = null
+                    // Throttle attempts too: returning from system settings while offline must
+                    // not start a fresh request every time. Manual checks always remain available.
+                    AppStore.updateSettings { it.copy(lastAppUpdateCheckAt = System.currentTimeMillis()) }
                     val newVersion = withTimeout(15_000) {
                         val response = updateClient.get(XAdSkipConfig.updateManifestUrl) {
                             onDownload { bytesReceived, _ ->
@@ -118,20 +148,22 @@ class UpdateStatus(val scope: CoroutineScope) {
                         require(response.status.value == 200) { "更新服务暂时不可用" }
                         XAdSkipUpdatePolicy.validate(response.body<NewVersion>())
                     }
-                    AppStore.updateSettings { it.copy(lastAppUpdateCheckAt = System.currentTimeMillis()) }
                     if (!XAdSkipUpdatePolicy.isNewer(newVersion, META.versionCode)) {
-                        newVersionFlow.value = null
+                        availableVersionFlow.value = null
+                        dialogVersionFlow.value = null
                         checkMessageFlow.value = "当前已是最新版本（v${META.versionName}）"
                         if (manual) showCheckMessage(loc)
                         return@tryWithStateLock
                     }
                     checkMessageFlow.value = "发现新版本 v${newVersion.versionName}"
-                    if (
-                        !manual &&
-                        (!AppStore.storeFlow.value.autoCheckAppUpdate ||
-                            ignoreVersionListFlow.value.contains(newVersion.versionCode))
-                    ) return@tryWithStateLock
-                    newVersionFlow.value = newVersion
+                    if (!manual && !AppStore.storeFlow.value.autoCheckAppUpdate) return@tryWithStateLock
+                    availableVersionFlow.value = XAdSkipUpdatePolicy.availableVersion(
+                        newVersion,
+                        META.versionCode,
+                        if (manual) emptySet() else ignoreVersionListFlow.value,
+                    )
+                    // Foreground checks update the home card without interrupting the user.
+                    if (manual) dialogVersionFlow.value = availableVersionFlow.value
                 }
             } catch (e: CancellationException) {
                 // A bounded network timeout is a failed check, not a latest-version result.
@@ -204,7 +236,7 @@ class UpdateStatus(val scope: CoroutineScope) {
 
     @Composable
     fun UpgradeDialog() {
-        newVersionFlow.collectAsStateWithLifecycle().value?.let { newVersionVal ->
+        dialogVersionFlow.collectAsStateWithLifecycle().value?.let { newVersionVal ->
             val text = remember(newVersionVal) {
                 val logs = newVersionVal.versionLogs.takeWhile { v ->
                     v.code > META.versionCode
@@ -222,7 +254,7 @@ class UpdateStatus(val scope: CoroutineScope) {
             val scrollState = rememberScrollState()
             AppAlertDialog(
                 title = {
-                    Text(text = "XAdSkip 有新版本")
+                    Text(text = "${META.appName} 有新版本")
                 },
                 text = {
                     Text(
@@ -236,26 +268,20 @@ class UpdateStatus(val scope: CoroutineScope) {
                 onDismissRequest = { },
                 confirmButton = {
                     TextButton(onClick = {
-                        newVersionFlow.value = null
+                        dialogVersionFlow.value = null
                         startDownload(newVersionVal)
                     }) {
                         Text(text = "下载更新")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { newVersionFlow.value = null }) {
-                        Text(text = "取消")
+                    TextButton(onClick = { dialogVersionFlow.value = null }) {
+                        Text(text = "稍后更新")
                     }
-                    if (!lastManual) {
-                        TextButton(onClick = {
-                            newVersionFlow.value = null
-                            ignoreVersionListFlow.update {
-                                it + newVersionVal.versionCode
-                            }
-                            toast("已忽略此版本")
-                        }) {
-                            Text(text = "忽略")
-                        }
+                    TextButton(onClick = {
+                        ignoreVersion(newVersionVal)
+                    }) {
+                        Text(text = "忽略此版本")
                     }
                 },
             )

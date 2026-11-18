@@ -121,6 +121,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        mainVm.onAppForeground()
+    }
+
     private fun fixTransparentNavigationBar() {
         // 修复在浅色主题下导航栏背景不透明的问题
         if (AndroidTarget.Q) {

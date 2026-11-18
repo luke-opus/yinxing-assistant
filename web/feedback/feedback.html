@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="向银杏助手反馈使用问题。上传截图，或附上一小段录屏，帮助我们了解哪里需要改进。">
+  <meta name="theme-color" content="#1645d6">
+  <title>问题反馈 · 银杏助手</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="feedback.css">
+  <script src="feedback.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到反馈表单</a>
+  <header class="site-header">
+    <a class="brand" href="https://xadskip.com/" aria-label="银杏助手首页"><img class="mark" src="icon.svg" alt="" aria-hidden="true" width="43" height="43">银杏助手</a>
+    <a class="back-link" href="wishes.html">许愿池</a><a class="back-link" href="https://xadskip.com/">返回首页</a>
+  </header>
+  <main id="main">
+    <div class="intro">
+      <p class="eyebrow">一起让手机用起来更轻松</p>
+      <h1>把遇到的问题，<br><span>告诉我们。</span></h1>
+      <p class="lead">先发一张截图就好。<br>如果需要看清操作过程，也可以发一小段录屏。</p>
+      <p class="field-help">截图和录屏能帮助我们了解问题；进一步适配时，可能还需要补充应用版本或页面信息。</p>
+      <p class="pause-note"><strong>如果发生误点，请先暂停银杏助手辅助。</strong></p>
+    </div>
+
+    <section class="form-card" aria-labelledby="form-title">
+      <div id="form-panel">
+        <h2 id="form-title">问题反馈</h2>
+        <p class="form-intro">不用注册。标有“必填”的地方填好即可。</p>
+        <noscript><p class="notice error">请启用浏览器的 JavaScript 后刷新页面，才能预览附件并发送反馈。此时没有文件会被上传。</p></noscript>
+        <form id="feedback-form" action="/api/feedback" method="post" enctype="multipart/form-data">
+          <fieldset id="feedback-fields" class="form-fields" disabled>
+            <legend class="visually-hidden">填写问题并添加附件</legend>
+            <fieldset class="issue-types">
+              <legend>遇到了什么问题？<span class="required">必填</span></legend>
+              <div class="choices">
+                <label class="choice"><input type="radio" name="issueType" value="missed" required><span>没有跳过</span></label>
+                <label class="choice"><input type="radio" name="issueType" value="wrong_click" required><span>点错了</span></label>
+                <label class="choice"><input type="radio" name="issueType" value="other" required><span>其他问题</span></label>
+              </div>
+            </fieldset>
+
+            <div class="field">
+              <label for="app-name">在哪个应用里？<span class="required">必填</span></label>
+              <input id="app-name" name="appName" type="text" maxlength="100" placeholder="例如：美图秀秀" required autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="app-version">这个应用的版本<span class="optional">选填</span></label>
+              <input id="app-version" name="appVersion" type="text" maxlength="80" placeholder="不知道可以不填" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="xadskip-version">银杏助手版本<span class="optional">选填</span></label>
+              <input id="xadskip-version" name="xadskipVersion" type="text" maxlength="40" placeholder="例如：0.3.4，不知道可以不填" autocomplete="off" aria-describedby="xadskip-version-help">
+              <p id="xadskip-version-help" class="format-help">从应用打开时会自动填入，也可以自行修改。</p>
+            </div>
+
+            <section class="attachment-section" aria-labelledby="attachment-title">
+              <h3 id="attachment-title">添加截图或录屏<span class="required">必填</span></h3>
+              <p id="attachment-help" class="field-help">截图 1–3 张，每张不超过 8 MB。也可添加 1 段不超过 60 秒、30 MB 的录屏；至少添加一份附件，总大小不超过 60 MB。</p>
+              <div class="privacy-reminder"><strong>先遮盖，再添加</strong><p>请遮盖姓名、头像、手机号、聊天内容、账号和验证码。录屏时也请留意通知栏和声音中的个人信息。</p></div>
+              <div class="file-actions">
+                <button id="choose-images" class="button secondary" type="button" aria-describedby="attachment-help image-types"><span aria-hidden="true">＋</span> 添加截图</button>
+                <button id="choose-video" class="button quiet" type="button" aria-describedby="attachment-help video-types">添加短录屏</button>
+              </div>
+              <input id="image-input" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple tabindex="-1" aria-label="选择截图">
+              <input id="video-input" class="visually-hidden" type="file" accept="video/mp4,video/webm,.mp4,.webm" tabindex="-1" aria-label="选择短录屏">
+              <p class="format-help"><span id="image-types">截图支持 JPG、PNG、WebP。</span> <span id="video-types">录屏支持 MP4、WebM。</span></p>
+              <p id="attachment-status" class="attachment-status" role="status" aria-live="polite"></p>
+              <ul id="attachment-list" class="attachment-list" aria-label="已选择的附件"></ul>
+              <p class="local-note">点击“发送反馈”前，附件只在当前页面预览。关闭页面会清空填写内容。</p>
+            </section>
+
+            <div class="field">
+              <label for="description">补充说两句<span class="optional">选填</span></label>
+              <textarea id="description" name="description" rows="4" maxlength="2000" placeholder="比如：打开应用后，广告一直没有跳过。"></textarea>
+            </div>
+            <div class="field">
+              <label for="email">联系邮箱<span class="optional">选填</span></label>
+              <input id="email" name="email" type="email" maxlength="254" placeholder="需要补充信息时，方便联系你" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false">
+            </div>
+
+            <div class="send-area">
+              <label class="consent"><input id="consent" name="consent" type="checkbox" value="true" required><span>我同意将本次填写内容和附件仅用于问题排查和规则维护，并确认已遮盖其中的个人私密信息。</span></label>
+              <button id="submit-feedback" class="button primary" type="submit">发送反馈 <span aria-hidden="true">↗</span></button>
+              <p class="send-help">提交的内容会发送给银杏助手项目维护者，不会在网页上公开展示。申请删除可联系 1345134186@qq.com，并提供反馈编号。</p>
+            </div>
+          </fieldset>
+          <p id="submit-status" class="submit-status" role="status" aria-live="polite" tabindex="-1"></p>
+        </form>
+      </div>
+      <section id="success-panel" class="success-panel" aria-labelledby="success-title" hidden>
+        <span class="success-mark" aria-hidden="true">✓</span>
+        <h2 id="success-title" tabindex="-1">反馈已收到</h2>
+        <p>谢谢你帮助我们改进。你的问题和附件已提交。</p>
+        <p class="receipt">反馈编号：<strong id="feedback-id"></strong></p>
+        <p class="field-help">可以记下编号，方便之后联系时说明。</p>
+        <div class="success-actions"><a class="button primary" href="https://xadskip.com/">返回首页</a><button id="send-another" class="button secondary" type="button">再反馈一个问题</button></div>
+      </section>
+    </section>
+    <p class="contact-note">权利投诉或其他联系：<a href="mailto:1345134186@qq.com">1345134186@qq.com</a></p>
+  </main>
+  <footer><span>银杏助手 · 公益助老</span><a href="wishes.html">许愿池 · 改进建议</a><a href="https://xadskip.com/">返回网站首页</a></footer>
+</body>
+</html>

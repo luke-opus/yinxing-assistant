@@ -58,12 +58,65 @@ class AppDbMigrationTest {
     }
 
     @Test
-    fun everyExportedSchemaMigratesToVersion16() = runBlocking {
+    fun everyExportedSchemaMigratesToVersion17() = runBlocking {
         // Protects the persisted schema compatibility contract for every released version.
-        for (startVersion in 1 until 16) {
+        for (startVersion in 1 until 17) {
             val helper = migrationHelper("all-migrations-$startVersion.db")
             helper.createDatabase(startVersion).close()
-            helper.runMigrationsAndValidate(16, listOf(Migration14To15)).close()
+            helper.runMigrationsAndValidate(17, listOf(Migration14To15)).close()
+        }
+    }
+
+    @Test
+    fun migration16To17KeepsOldLogsWithoutInventingTheirActions() = runBlocking {
+        val name = "action-trace-migration.db"
+        val helper = migrationHelper(name)
+        helper.createDatabase(16).use { connection ->
+            connection.execSQL("""
+                INSERT INTO action_log
+                    (id, ctime, app_id, activity_id, subs_id, subs_version,
+                     group_key, group_type, rule_index, rule_key)
+                VALUES (9, 123, 'source.app', 'source.app.Ad', 7, 2, 3, 2, 0, 4)
+            """.trimIndent())
+        }
+        helper.runMigrationsAndValidate(17, emptyList()).close()
+        val database = openDatabase(name)
+        try {
+            val log = database.actionLogDao().queryLatest().first()!!
+            assertEquals(9, log.id)
+            assertEquals("source.app", log.appId)
+            assertEquals(123L, log.ctime)
+            assertEquals(4, log.ruleKey)
+            assertEquals(null, log.action)
+            assertEquals(null, log.groupName)
+            assertEquals(null, log.positionX)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun firstInsertBeforeAnyLogReadSurvivesDatabaseReopening() = runBlocking {
+        val name = "first-action.db"
+        val record = ActionLog(
+            ctime = 123, appId = "source.app", subsId = 7, subsVersion = 2,
+            groupKey = 3, groupType = 2, ruleIndex = 0, ruleKey = 4,
+            appName = "Source app", subsName = "Original subscription",
+            groupName = "Original group", ruleName = "Original rule",
+            action = "clickCenter", positionX = 720f, positionY = 84f,
+        )
+        // No query, collector, screen or ViewModel has opened this database first.
+        val database = openDatabase(name)
+        val id = try {
+            database.actionLogDao().insert(record).single().toInt()
+        } finally {
+            database.close()
+        }
+        val reopened = openDatabase(name)
+        try {
+            assertEquals(record.copy(id = id), reopened.actionLogDao().queryLatest().first())
+        } finally {
+            reopened.close()
         }
     }
 

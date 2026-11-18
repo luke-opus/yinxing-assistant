@@ -59,9 +59,12 @@ import li.gkd.app.feature.settings.WorkModeRoute
 import li.gkd.app.ui.share.LocalMainViewModel
 import li.gkd.app.ui.home.HomePage
 import li.gkd.app.ui.home.HomeRoute
+import li.gkd.app.feature.rules.RuleCoverageRoute
+import li.gkd.app.feature.rules.RuleCoveragePage
 
 private val mainRouteEntryProvider = entryProvider {
     entry<HomeRoute> { HomePage() }
+    entry<RuleCoverageRoute> { RuleCoveragePage() }
     entry<WorkModeRoute> { WorkModePage() }
     entry<AboutRoute> { AboutPage() }
     entry<BlockA11yAppListRoute> { BlockA11yAppListPage() }

@@ -29,6 +29,14 @@ data class ActionLog(
     @ColumnInfo(name = "group_type", defaultValue = "2") val groupType: Int,
     @ColumnInfo(name = "rule_index") val ruleIndex: Int,
     @ColumnInfo(name = "rule_key") val ruleKey: Int? = null,
+    // Nullable for pre-v17 records: never infer past actions from today's subscription.
+    @ColumnInfo(name = "app_name") val appName: String? = null,
+    @ColumnInfo(name = "subs_name") val subsName: String? = null,
+    @ColumnInfo(name = "group_name") val groupName: String? = null,
+    @ColumnInfo(name = "rule_name") val ruleName: String? = null,
+    @ColumnInfo(name = "action") val action: String? = null,
+    @ColumnInfo(name = "position_x") val positionX: Float? = null,
+    @ColumnInfo(name = "position_y") val positionY: Float? = null,
 ) {
     @DeleteTable.Entries(
         DeleteTable(tableName = "click_log")

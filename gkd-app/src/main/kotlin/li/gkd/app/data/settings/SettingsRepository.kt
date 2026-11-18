@@ -157,8 +157,16 @@ class SettingsRepository(
         filename = "store.json",
         file = storeFolder.resolve("store.json"),
         decode = { text ->
-            text?.let { runCatching { json.decodeFromString<SettingsStore>(it) }.getOrNull() }
-                ?: defaultSettings()
+            val settings = text?.let {
+                runCatching { json.decodeFromString<SettingsStore>(it) }.getOrNull()
+            } ?: defaultSettings()
+            // This release removes the optional default status service. A later explicit
+            // opt-in (advanced features) survives subsequent launches and backup restores.
+            if (settings.statusNotificationPolicyVersion < 1) {
+                settings.copy(enableStatusService = false, statusNotificationPolicyVersion = 1)
+            } else {
+                settings
+            }
         },
         encode = { json.encodeToString(it) },
         scope = scope,

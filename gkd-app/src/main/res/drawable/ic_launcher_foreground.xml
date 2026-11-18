@@ -2,5 +2,5 @@
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
     <path android:fillColor="@color/ic_launcher_foreground_tint"
-        android:pathData="M31,31 L43,31 L54,46 L65,31 L77,31 L60,54 L77,77 L65,77 L54,62 L43,77 L31,77 L48,54 Z" />
+        android:pathData="M54,68 C43,62 29,54 23,42 C30,30 42,25 49,28 L54,38 L59,28 C66,25 78,30 85,42 C79,54 65,62 54,68 Z M51,64 L57,64 L57,81 Q54,85 51,81 Z" />
 </vector>

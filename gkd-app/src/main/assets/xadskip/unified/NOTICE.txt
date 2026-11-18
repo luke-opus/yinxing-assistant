@@ -1,0 +1,8 @@
+XAdSkip 统一规则数据由固定来源转换、保留、合并并去重。
+甘霖规则：MIT；奥怪规则：GPL-3.0-only；李跳跳迁移规则：AGPL-3.0。
+各来源署名、许可及修改说明保留；合并的规则数据分发遵守 AGPL-3.0 及来源所需声明。
+本声明不把独立的 GPL 应用代码重新标记为其他许可证。
+完整输入和生成脚本随对应源码分发；不是李跳跳原软件或官方续作。
+李跳跳转换草稿和非广告功能默认关闭；重叠候选不自动启用。
+来源、固定提交、原组与统一组映射见 rules.json 的 xadskip 字段。
+原始许可证位于 ../community/ganlinte/LICENSE、../community/aoguai/LICENSE、../community/ltt/LICENSE。

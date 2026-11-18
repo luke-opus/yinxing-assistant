@@ -1,17 +1,18 @@
-# XAdSkip
+# 银杏助手
 
-基于 GKD 源码和李跳跳社区规则迁移工具的 Android 协作开发项目。应用名称 **XAdSkip**，包名 `app.xadskip.android`，debug 包名追加 `.debug`。这是独立项目，不是李跳跳原源码或官方续作。
+基于 GKD 源码和李跳跳社区规则迁移工具的 Android 协作开发项目。应用名称 **银杏助手**（原名 XAdSkip），副标题“帮您跳过部分广告，少点几下”。包名 `app.xadskip.android`，debug 包名追加 `.debug`。这是独立项目，不是李跳跳原源码或官方续作。
 
 ## 当前状态
 
 - 导入 GKD 1.12.1 源码快照，保留无障碍服务、匹配引擎、规则管理和调试工具。
 - 新增 JSON/JSON5 转换器、Java 包名哈希还原、规则报告和测试。
-- 当前源码版本 **0.3.3（versionCode 6）**，随包加入甘霖 v72、奥怪 v89 的完整订阅文件及原许可证，见[社区规则来源](rules/COMMUNITY_SOURCES.md)。全新安装首次启动会自动离线导入并启用覆盖最多的甘霖订阅，保留规则作者设置的规则组和类别默认开关。手动入口为 **订阅 → 右上角更多 → 导入甘霖/奥怪内置规则**，手动新增的订阅仍默认关闭；原有李跳跳迁移草稿仍随包保留。
+- 当前源码版本 **0.3.4（versionCode 7）**，保留 `app.xadskip.android` 包名与正式签名以支持覆盖升级；下载文件名继续使用 `XAdSkip-0.3.4.apk`。本段描述源码实现，是否构建、验证和发布以发布记录为准。
+- 甘霖 v72、奥怪 v89 的固定源码、完整规则和原许可证仍随源码提供，见[社区规则来源](rules/COMMUNITY_SOURCES.md)。普通用户使用自动准备的统一内置规则库，无需选择来源或手动导入；首页可查看支持应用、规则状态和触发记录。原有迁移工具和李跳跳规则草稿作为开发资料保留。
 - 326 个来源条目生成 **304 个应用、692 条规则草稿**，91 项需人工处理的条目见 `rules/conversion-report.json`。被跳过条目可能代表整套应用配置或单条规则，91 不是规则总数。
-- 应用入口：**订阅 → 右上角更多 → 导入 XAdSkip 迁移草稿**。订阅和各规则组默认关闭；重复导入保留已有编辑。
-- 使用独立包名、名称、版本和启动图标。版本检测仅使用 XAdSkip 官网，可在「关于」手动检查或关闭每天自动检测；下载校验大小和 SHA-256；原发布工作流保存在 `docs/upstream/`，默认不注册上游资源上传任务。
+- 同意首次说明后，进入应用会独立查询官网规则和软件版本。规则更新校验签名、内容和版本后自动应用，失败保留旧规则；版本自动检查间隔至少 15 分钟，首页保留已发现的新版本提示，可在「关于」手动检查或关闭自动检查。软件下载校验大小和 SHA-256，下载与系统安装仍由用户确认。
+- 首次使用提供三步无障碍图示；系统权限必须由使用者确认，不能用程序绕过。首页可暂停、查触发记录和打开反馈；反馈页面仅预填本应用版本，不自动上传日志、应用列表或设备信息。原发布工作流保存在 `docs/upstream/`，默认不注册上游资源上传任务。
 - **历史验证：2026-09-13 的 Android 开发版已成功编译并生成 APK，尚未实机验证。** 当时由 GitHub Actions 构建，SDK 安装包名已修正为 `platforms;android-37.0`；成功记录见下文。0.3.0 的发布变化、源码构建与签名要求见 [RELEASE-0.3.0](docs/RELEASE-0.3.0.md)，0.3.1 的授权引导改进见 [RELEASE-0.3.1](docs/RELEASE-0.3.1.md)，本次构建结果以对应发布记录为准。
-- 开发仓库：[luke-opus/xadskip](https://github.com/luke-opus/xadskip)，已创建为 **Private**。协作者 `wangsen19900105` 的邀请已发送，等待对方接受。
+- 公开源码入口：[luke-opus/yinxing-assistant](https://github.com/luke-opus/yinxing-assistant)。对应 APK 也提供完整源码 ZIP；发布前须核对公开仓库和下载链接。
 
 旧规则涵盖广告、升级、青少年模式和权限提示等用途，必须先筛选。来源库不包含李跳跳内部默认开屏识别逻辑，转换无法恢复该逻辑。应用仍有 GKD 的高级功能和部分上游说明入口，发布前需按 `docs/HANDOFF.md` 整理。
 
@@ -24,11 +25,15 @@
 | 甘霖 | v72 | 610 | 1389 | 3 | [发布快照](third_party/gkd-subscriptions/releases/) |
 | 奥怪 | v89 | 72 | 280 | 9 | [发布快照](third_party/gkd-subscriptions/releases/) |
 
-历史完整源码快照继续保留；本次固定发布快照与对应源码保存在 `third_party/gkd-subscriptions/releases/`，没有合并上游 Git 历史。固定提交、许可、更新步骤和完整性记录见[社区规则来源](rules/COMMUNITY_SOURCES.md)与 [`UPSTREAM.json`](UPSTREAM.json)。APK 内原始订阅文件按字节复制；导入时使用独立标识并清除网络更新地址，保留原规则、作者和规则组开关。重复导入保留用户修改。两套来源有 68 个重叠应用，按包名合计 614 个不同应用；建议选择一套启用，并按设备实际效果验证。
+历史完整源码快照继续保留；本次固定发布快照与对应源码保存在 `third_party/gkd-subscriptions/releases/`，没有合并上游 Git 历史。固定提交、许可、更新步骤和完整性记录见[社区规则来源](rules/COMMUNITY_SOURCES.md)与 [`UPSTREAM.json`](UPSTREAM.json)。APK 保留来源文件和许可证，普通用户面对统一规则库，不需要区分作者来源。两套来源有 68 个重叠应用，原始数据按包名合计 614 个不同应用；统一规则使用合并策略处理重叠内容，并保留来源与作者归属。收录数量不等于实际可用数量，必须按设备效果验证。
 
-默认规则只初始化一次，且只在尚无订阅的全新安装上执行；已有安装（包括只有本地订阅的旧版本）不会自动新增或开启规则。用户之后关闭、编辑或删除订阅，重启应用不会恢复默认配置。升级 APK 会更新已有内置订阅内容，保留启用状态及规则配置；不会恢复用户删除的内置订阅。内置订阅不启用独立网络更新；默认导入不授予或开启系统无障碍权限，仍需用户在系统中授权。覆盖数量不代表每条规则默认启用，也不代表已完成对应应用的实机验证。
+统一规则库先从 APK 离线准备。同意首次说明后，前台进入事件会向 `https://xadskip.com/rules/stable/manifest.json` 查询规则；仅接受通过签名、文件哈希、结构和版本校验的更新，失败继续使用已有规则。自动应用规则与安装 APK 是不同流程；规则更新无需再次安装 APK，系统无障碍授权仍必须由用户亲自确认。升级与更新保留已有启用状态及规则开关；具体迁移行为以规则仓库实现和相关测试为准。手机后台限制、应用页面改版、规则关闭或未收录均可能影响效果。
 
-“关于”中的使用说明、网页隐私和反馈入口由 XAdSkip 提供；应用数据处理另有随包的本地隐私说明，可在首次使用说明和“关于”中离线查看。保留 GKD 上游来源、社区规则与许可证致谢；移除上游捐赠、Google Play 跳转以及使用上游固定仓库生成日志/快照链接的 GitHub 上传功能。本地导出与系统分享保留，导出前请检查日志、应用列表、设置和快照中的个人信息。高级上游技术文档继续作为明确标注的参考。
+首页与“关于”中的反馈入口打开 `https://feedback.xadskip.com/`，仅带 `xadskipVersion` 和 `xadskipVersionCode` 两个本应用版本参数。用户自行填写问题、选择并检查截图或录屏后主动发送；反馈用于问题排查与规则维护，可联系 `1345134186@qq.com` 并提供反馈编号申请删除。
+
+网站新增[许愿池](https://feedback.xadskip.com/wishes.html)：用户可单独提交改进文字，也可附图片或短视频。内容先私有保存，开发者通过服务器 CLI 审核、整理后才公开愿望文字、处理状态和说明；公开状态包括“待处理”“计划中”“已完成 ✓”，附件与邮箱默认不公开。前端没有公开管理功能，只有真实服务器回执才显示提交成功。
+
+“关于”中的使用说明、网页隐私和反馈入口由银杏助手提供；应用数据处理另有随包的本地隐私说明，可在首次使用说明和“关于”中离线查看。保留 GKD 上游来源、社区规则与许可证致谢；移除上游捐赠、Google Play 跳转以及使用上游固定仓库生成日志/快照链接的 GitHub 上传功能。本地导出与系统分享保留，导出前请检查日志、应用列表、设置和快照中的个人信息。高级上游技术文档继续作为明确标注的参考。
 
 
 ## 验证
@@ -73,13 +78,13 @@ npm test --prefix tools/selector-check
 
 上表 Android 组合已在构建 #2 中成功验证。`gradlew --version` 显示的 Kotlin 2.4.0 是 Gradle 自带的脚本运行组件；应用的 Kotlin 编译插件版本为 2.4.10。两者用途不同，不需要把数字改成一致。JDK 主版本固定为 21，后续 CI 可能使用该系列的新补丁版本；SDK Platform 包的当前 revision 也由 SDK 仓库维护，具体安装版本保留在工作流的 `Show build tool versions` 日志中。
 
-网站提供的 `XAdSkip-0.3.3-source.zip` 是完整源码快照，不包含 `.git` 目录或 Git bundle；构建不需要访问私有开发仓库。解压后进入 `XAdSkip-0.3.3` 目录，先创建本地 Git 仓库并提交源码，供构建脚本读取提交元数据。下面的提交身份仅用于这次本地源码快照，不修改系统 Git 配置，也不会推送到任何服务器：
+0.3.4 发布时提供的 `XAdSkip-0.3.4-source.zip` 是完整源码快照，不包含 `.git` 目录或 Git bundle；构建不需要访问私有开发仓库。解压后进入 `XAdSkip-0.3.4` 目录，先创建本地 Git 仓库并提交源码，供构建脚本读取提交元数据。下面的提交身份仅用于这次本地源码快照，不修改系统 Git 配置，也不会推送到任何服务器：
 
 ```powershell
-cd XAdSkip-0.3.3
+cd XAdSkip-0.3.4
 git init
 git add .
-git -c user.name="Source build" -c user.email="source-build@example.invalid" commit -m "Import XAdSkip 0.3.3 source snapshot"
+git -c user.name="Source build" -c user.email="source-build@example.invalid" commit -m "Import XAdSkip 0.3.4 source snapshot"
 ```
 
 如果通过 Git 克隆取得源码且已有提交，可跳过以上初始化。源码 ZIP 新建的本地提交 ID 会与发布者原提交不同，不代表源码内容发生变化。
@@ -93,36 +98,27 @@ sdkmanager --channel=0 'platforms;android-37.0' 'build-tools;37.0.0'
 
 macOS / Linux 使用 `sh ./gradlew` 替换 `.\gradlew.bat`，可直接运行 ZIP 中未带可执行权限的 Wrapper。仅构建 `gkd` 渠道；正式产物位于 `gkd-app/build/outputs/apk/gkd/release/`。单元测试使用工程实际提供的 `testGkdDebugUnitTest` 任务，公开安装包仍只使用 release 产物。未提供签名参数时会生成未签名 APK，不会使用 debug 密钥代签。安装前须使用自己的签名，配置方式见 [RELEASE-0.3.0](docs/RELEASE-0.3.0.md)；私钥与口令应保存在源码目录之外，不进入 Git 或公开源码包。
 
-原有 GitHub 工作流 **Actions → Android development build → Run workflow → main** 仍用于团队开发验证，仅手动触发，不自动发布正式版。该工作流的 `XAdSkip-development-apk` 是 debug 产物，保留 7 天，本地对应目录为 `gkd-app/build/outputs/apk/gkd/debug/`。需要本地开发包时可单独运行 `:gkd-app:assembleGkdDebug`。生成任何 APK 后仍需进行设备测试。
+原有 GitHub 工作流 **Actions → Android development build → Run workflow → develop** 仍用于团队开发验证，仅手动触发，不自动发布正式版。该工作流的 `XAdSkip-development-apk` 是 debug 产物，保留 7 天，本地对应目录为 `gkd-app/build/outputs/apk/gkd/debug/`。需要本地开发包时可单独运行 `:gkd-app:assembleGkdDebug`。生成任何 APK 后仍需进行设备测试。
 
-## 私有协作
+## 公开源码与协作
 
-在个人账号下新建 **Private 独立仓库**，各自使用自己的 GitHub 账号，按用户名邀请。公共项目的 GitHub Fork 不能直接实现这一私有设置。
+Android 应用、官网模板、反馈表单、私有反馈服务程序和通用发布工具均在本仓库中。目录说明、`develop` / `release/版本` / `v版本` 工作流、外置签名与规则人工发布要求见 [开发与发布](docs/DEVELOPMENT.md)。反馈数据库、用户附件及签名私钥不属于公开源码。
 
-当前仓库由 `luke-opus` 所有，仅邀请 `wangsen19900105`。协作者使用自己的账号登录 GitHub，接受仓库邀请后即可克隆和提交分支：
+公开项目使用 [luke-opus/yinxing-assistant](https://github.com/luke-opus/yinxing-assistant)。开发和发布保留完整上游归属、许可证及固定规则源码快照。普通贡献使用分支与 Pull Request，修改前先阅读 `AGENTS.md`；公开源码不包含正式签名私钥、生产凭据和私有运行数据。
 
 ```powershell
-git clone https://github.com/luke-opus/xadskip.git
-cd xadskip
+git clone https://github.com/luke-opus/yinxing-assistant.git
+cd yinxing-assistant
 git switch -c feature/your-change
 ```
 
-提交后创建 Pull Request，由另一位开发者检查再合并。分工和首轮验收见 `docs/HANDOFF.md`。
-
-`scripts/publish-private.ps1` 只推送到当前登录用户拥有的私有仓库，推送前检查已有成员和待接受邀请，不会强推或改为公开：
-
-```powershell
-gh auth login --hostname github.com
-.\scripts\publish-private.ps1 -RepositoryName xadskip -Collaborators '另一位GitHub用户名'
-```
-
-如果实际是你加另外两人，传入两个用户名。邀请必须由对方接受。组织所有者也能访问组织私有库，因此“仅两人访问”优先采用个人私有库；账号已有的 GitHub App 等授权也需单独核对。
+从源码自行构建需使用自己的签名，不能覆盖官方签名安装的应用。正式发布包由维护者使用原签名构建，以保留现有用户的覆盖升级能力。旧的私有发布脚本作为历史工具保留，不用于公开正式发布。
 
 ## 来源与许可证
 
 精确提交、输入文件哈希见 `UPSTREAM.json`。原 README 和许可证均保留。
 
-- GKD 和 XAdSkip 新增程序：GPL-3.0-only，见根目录 `LICENSE`。
+- GKD 和银杏助手（XAdSkip）新增程序：GPL-3.0-only，见根目录 `LICENSE`。
 - 李跳跳来源及转换后的规则数据：按 `third_party/ltt/LICENSE` 的 AGPL-3.0 许可保留，见 `rules/NOTICE.md`。
 - 甘霖规则快照：MIT，见 `third_party/gkd-subscriptions/ganlinte/LICENSE`；奥怪规则快照：GPL-3.0-only，见 `third_party/gkd-subscriptions/aoguai/LICENSE`，同时保留其 `LEGAL.md`。两者及历史贡献者的原有署名均保留。
 - 私有开发与对外分发是两个阶段。对外发 APK 时须履行许可证的对应源码、声明及接收者权利要求；团队仓库的管理权限不必公开。

@@ -3,6 +3,7 @@ package li.gkd.app.util
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -90,12 +91,28 @@ class XAdSkipUpdatePolicyTest {
     }
 
     @Test
-    fun automaticChecksRespectDisabledSettingAndSuccessfulDailyTimestamp() {
+    fun foregroundChecksRespectDisabledSettingAndThrottleBothSuccessAndFailureAttempts() {
         val now = 200_000_000L
         assertFalse(XAdSkipUpdatePolicy.shouldAutoCheck(false, 0, now))
         assertTrue(XAdSkipUpdatePolicy.shouldAutoCheck(true, 0, now))
         assertFalse(XAdSkipUpdatePolicy.shouldAutoCheck(true, now - 10, now))
-        assertTrue(XAdSkipUpdatePolicy.shouldAutoCheck(true, now - 86_400_000, now))
+        assertFalse(XAdSkipUpdatePolicy.shouldAutoCheck(true, now - 899_999, now))
+        assertTrue(XAdSkipUpdatePolicy.shouldAutoCheck(true, now - 900_000, now))
         assertTrue(XAdSkipUpdatePolicy.shouldAutoCheck(true, now + 10, now))
+    }
+
+    @Test
+    fun restoresOnlyTrustedNewerVersionsAndRespectsIgnoredVersions() {
+        assertEquals(release, XAdSkipUpdatePolicy.availableVersion(release, 5, emptySet()))
+        assertNull(XAdSkipUpdatePolicy.availableVersion(release, 6, emptySet()))
+        assertNull(XAdSkipUpdatePolicy.availableVersion(release, 7, emptySet()))
+        assertNull(XAdSkipUpdatePolicy.availableVersion(release, 5, setOf(6)))
+        assertNull(XAdSkipUpdatePolicy.availableVersion(null, 5, emptySet()))
+        assertNull(XAdSkipUpdatePolicy.availableVersion(
+            release.copy(downloadUrl = "https://example.com/untrusted.apk"), 5, emptySet(),
+        ))
+        assertNull(XAdSkipUpdatePolicy.availableVersion(
+            release.copy(sha256 = "corrupt-cache"), 5, emptySet(),
+        ))
     }
 }

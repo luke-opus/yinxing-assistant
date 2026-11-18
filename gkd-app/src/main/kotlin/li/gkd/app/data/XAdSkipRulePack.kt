@@ -11,6 +11,8 @@ import li.gkd.db.SubsItem
 
 // XAdSkip additions, 2026-09-13. SPDX-License-Identifier: GPL-3.0-only
 object XAdSkipRulePack {
+    const val UNIFIED_ID = 2026111801L
+    const val UNIFIED_ASSET = "xadskip/unified/rules.json"
     enum class Community(
         val title: String,
         val assetPath: String,
@@ -35,18 +37,26 @@ object XAdSkipRulePack {
         readAsset: (String) -> String,
     ): PreparedImport? {
         if (initialized || existingItems.isNotEmpty()) return null
-        val subscription = Community.entries
-            .map { pack -> prepareCommunity(readAsset(pack.assetPath), pack) }
-            .maxWith(compareBy<RawSubscription> { it.groupsSize }.thenBy { it.apps.size })
+        val subscription = prepareUnified(readAsset(UNIFIED_ASSET))
         return PreparedImport(
             subscription = subscription,
             item = SubsItem(
                 id = subscription.id,
                 order = 0,
                 enable = true,
-                enableUpdate = false,
+                enableUpdate = true,
             ),
         )
+    }
+
+    fun prepareUnified(source: String): RawSubscription {
+        val subscription = RawSubscription.parse(source, json5 = false)
+        require(subscription.id == UNIFIED_ID) { "统一规则库标识不一致" }
+        require(subscription.version > 0) { "统一规则库版本无效" }
+        require(subscription.updateUrl == null && subscription.checkUpdateUrl == null) {
+            "统一规则只能通过本站签名清单更新"
+        }
+        return subscription
     }
 
     fun prepareCommunity(source: String, pack: Community): RawSubscription {
@@ -67,10 +77,38 @@ object XAdSkipRulePack {
         current: RawSubscription,
         readAsset: (String) -> String,
     ): RawSubscription? {
+        if (current.id == UNIFIED_ID) {
+            return prepareUnified(readAsset(UNIFIED_ASSET)).takeIf { it.version > current.version }
+        }
         val pack = Community.entries.find { it.subscriptionId == current.id } ?: return null
         val bundled = prepareCommunity(readAsset(pack.assetPath), pack)
         return bundled.takeIf { it.version > current.version }
     }
+
+    /** Known packaged versions only; unmatched content may contain user edits. */
+    fun legacyBaseline(
+        current: RawSubscription,
+        readAsset: (String) -> String,
+    ): RawSubscription? {
+        if (current.id == XAdSkipConfig.draftSubscriptionId) {
+            return RawSubscription.parse(readAsset("xadskip/ltt-drafts.json"), json5 = false)
+                .takeIf { it.version == current.version }
+        }
+        val pack = Community.entries.find { it.subscriptionId == current.id } ?: return null
+        val latest = prepareCommunity(readAsset(pack.assetPath), pack)
+        if (latest.version == current.version) return latest
+        val historicalVersion = when (pack) {
+            Community.GANLIN -> 71
+            Community.AOGUAI -> 88
+        }
+        return if (current.version == historicalVersion) {
+            prepareCommunity(readAsset("xadskip/unified/legacy/${pack.subscriptionId}-$historicalVersion.json"), pack)
+        } else null
+    }
+
+    fun matchesPackagedContent(current: RawSubscription, baseline: RawSubscription): Boolean =
+        current.apps == baseline.apps && current.globalGroups == baseline.globalGroups &&
+            current.categories == baseline.categories
 
     suspend fun importCommunity(pack: Community): Boolean = withContext(Dispatchers.IO) {
         communityImportMutex.withLock {

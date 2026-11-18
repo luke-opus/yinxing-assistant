@@ -33,12 +33,12 @@ object ServiceController {
     )
 
     fun setStatusEnabled(enabled: Boolean) {
+        AppStore.updateSettings { it.copy(enableStatusService = enabled) }
         setEnabled(
             enabled = enabled,
             start = StatusService::start,
             stop = StatusService::stop,
         )
-        AppStore.updateSettings { it.copy(enableStatusService = enabled) }
     }
 
     private fun setEnabled(

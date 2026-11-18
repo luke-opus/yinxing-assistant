@@ -213,8 +213,8 @@ private fun AdvancedContent() {
                 onClick = { mainVm.navigatePage(ActivityLogRoute) },
             )
             TextSwitch(
-                title = "界面服务",
-                subtitle = "显示当前界面信息",
+                title = "界面信息浮窗（调试）",
+                subtitle = "仅显示当前页面；成功执行规则后会自动保存触发记录",
                 checked = activityServiceRunning,
                 onCheckedChange = scope.launchUiAction { enabled ->
                     if (!enabled || mainVm.permissionRequests.ensurePermissions(
@@ -228,13 +228,13 @@ private fun AdvancedContent() {
                 },
             )
             SettingItem(
-                title = "事件日志",
-                subtitle = "无障碍事件日志",
+                title = "原始事件日志（调试）",
+                subtitle = "用于排查问题，与自动保存的触发记录不同",
                 onClick = { mainVm.navigatePage(A11yEventLogRoute) },
             )
             TextSwitch(
-                title = "事件服务",
-                subtitle = "显示无障碍事件",
+                title = "记录原始事件（调试）",
+                subtitle = "默认关闭，可能包含界面文字；无需为触发记录开启",
                 checked = eventServiceRunning,
                 onCheckedChange = scope.launchUiAction { enabled ->
                     if (!enabled || mainVm.permissionRequests.ensurePermissions(

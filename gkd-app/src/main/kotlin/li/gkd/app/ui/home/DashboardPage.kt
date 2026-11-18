@@ -42,6 +42,8 @@ import li.gkd.app.META
 import li.gkd.app.R
 import li.gkd.app.core.state.Loadable
 import li.gkd.app.data.XAdSkipConfig
+import li.gkd.app.data.XAdSkipRulePack
+import li.gkd.app.data.XAdSkipRuleUpdater
 import li.gkd.app.data.subscription.SubscriptionRepository
 import li.gkd.app.data.subscription.SubscriptionState
 import li.gkd.app.permission.PermissionStates
@@ -49,13 +51,13 @@ import li.gkd.app.priv.privilegeContextFlow
 import li.gkd.app.priv.uiAutomationFlow
 import li.gkd.app.service.A11yService
 import li.gkd.app.service.ActivityService
-import li.gkd.app.service.StatusService
 import li.gkd.app.service.topAppIdFlow
 import li.gkd.app.store.AppStore.actualA11yScopeAppList
 import li.gkd.app.store.AppStore.actionCountFlow
 import li.gkd.app.store.AppStore.storeFlow
 import li.gkd.app.feature.log.ActionLogRoute
 import li.gkd.app.feature.log.ActivityLogRoute
+import li.gkd.app.feature.rules.RuleCoverageRoute
 import li.gkd.app.ui.AppConfigRoute
 import li.gkd.app.ui.PrivilegeServiceRoute
 import li.gkd.app.ui.WebViewRoute
@@ -72,9 +74,9 @@ import li.gkd.app.ui.style.EmptyHeight
 import li.gkd.app.ui.style.itemHorizontalPadding
 import li.gkd.app.ui.style.itemVerticalPadding
 import li.gkd.app.ui.style.surfaceCardColors
-import li.gkd.app.ui.share.launchUi
 import li.gkd.app.ui.share.statusText
 import li.gkd.app.util.throttle
+import li.gkd.app.util.IntentUtils
 import li.gkd.db.RuleGroupType
 
 @Composable
@@ -220,12 +222,46 @@ fun useDashboardPage(): ScaffoldExt {
                     }
                 }
             }
+            DashboardUpdateCard()
+            val unifiedRules = rulesState.value?.subscriptions?.get(XAdSkipRulePack.UNIFIED_ID)
+            if (unifiedRules != null) {
+                val ruleUpdate by XAdSkipRuleUpdater.statusFlow.collectAsStateWithLifecycle()
+                Text(
+                    text = "统一规则 v${unifiedRules.version} · " + when {
+                        ruleUpdate.checking -> "正在检查更新…"
+                        ruleUpdate.message != null -> ruleUpdate.message
+                        else -> "已准备，无需手动导入"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                onClick = { mainVm.navigatePage(RuleCoverageRoute) },
+            ) {
+                Text(
+                    text = "支持哪些应用",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
             TextButton(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 onClick = { mainVm.navigatePage(ActionLogRoute()) },
             ) {
                 Text(
                     text = "查看触发记录（累计 $actionCount 次）",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+            TextButton(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                onClick = throttle {
+                    IntentUtils.openUri(XAdSkipConfig.feedbackUrlForVersion(META.versionName, META.versionCode))
+                },
+            ) {
+                Text(
+                    text = "反馈问题",
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -266,28 +302,6 @@ fun useDashboardPage(): ScaffoldExt {
                     },
                     mode = automatorMode.label,
                     onModeClick = { mainVm.navigatePage(WorkModeRoute) },
-                )
-                val manageRunning by StatusService.isRunning.collectAsStateWithLifecycle()
-                PageSwitchItemCard(
-                    imageVector = PerfIcon.Notifications,
-                    title = "常驻通知",
-                    subtitle = "在通知栏显示运行状态",
-                    checked = manageRunning && store.enableStatusService,
-                    onCheckedChange = { enabled ->
-                        if (enabled) {
-                            vm.scope.launchUi {
-                                if (mainVm.permissionRequests.ensurePermissions(
-                                        PermissionStates.foregroundServiceSpecialUse,
-                                        PermissionStates.notification,
-                                    )
-                                ) {
-                                    vm.startStatusService()
-                                }
-                            }
-                        } else {
-                            vm.stopStatusService()
-                        }
-                    },
                 )
                 val latestRecord by SubscriptionState.latestRecordFlow.collectAsStateWithLifecycle()
                 val latestRecordDesc by SubscriptionState.latestRecordDescFlow.collectAsStateWithLifecycle()
@@ -341,13 +355,46 @@ fun useDashboardPage(): ScaffoldExt {
                 )
                 PageItemCard(
                     title = "规则说明与帮助",
-                    subtitle = "查看 XAdSkip 使用说明和常见问题",
+                    subtitle = "查看${META.appName}使用说明和常见问题",
                     imageVector = PerfIcon.HelpOutline,
                     onClickLabel = "打开规则文档页面",
                     onClick = { mainVm.navigatePage(WebViewRoute(initUrl = XAdSkipConfig.homePageUrl)) },
                 )
             }
             Spacer(modifier = Modifier.height(EmptyHeight))
+        }
+    }
+}
+
+@Composable
+private fun DashboardUpdateCard() {
+    val updateStatus = LocalMainViewModel.current.updateStatus
+    if (updateStatus != null) {
+        val availableVersion by updateStatus.availableVersionFlow.collectAsStateWithLifecycle()
+        val version = availableVersion
+        if (version != null) {
+            Card(modifier = Modifier.fillMaxWidth(), colors = surfaceCardColors) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = "有新版本 v${version.versionName}",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = "当前版本 v${META.versionName}。建议更新，下载后由您确认安装。",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Button(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        onClick = throttle { updateStatus.showAvailableUpdate() },
+                    ) {
+                        Text("更新安装", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
         }
     }
 }
@@ -387,50 +434,6 @@ private fun PageItemCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun PageSwitchItemCard(
-    imageVector: ImageVector,
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    val onClick = throttle { onCheckedChange(!checked) }
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) {
-                this.onClick(label = "切换$title", action = null)
-            },
-        shape = MaterialTheme.shapes.large,
-        colors = surfaceCardColors,
-        onClick = onClick,
-    ) {
-        IconTextCard(
-            imageVector = imageVector,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            PerfSwitch(
-                checked = checked,
-                onCheckedChange = null,
-            )
         }
     }
 }

@@ -67,7 +67,7 @@ class ActivityService : OverlayWindowService(
                 val topActivity by topActivityFlow.collectAsStateWithLifecycle(initialValue = currentTopActivity)
                 val hasAuth by activityOkFlow.collectAsStateWithLifecycle()
                 ClosableTitle(
-                    title = if (hasAuth) "记录服务" else "记录服务(无权限)"
+                    title = if (hasAuth) "界面信息浮窗" else "界面信息浮窗（无权限）"
                 )
                 if (hasAuth) {
                     Box {
@@ -102,7 +102,7 @@ class ActivityService : OverlayWindowService(
         useLogLifecycle()
         useServicePresence(
             stateFlow = isRunning,
-            name = "记录服务",
+            name = "界面信息浮窗",
         )
         onCreated {
             NotificationCatalog.activity().startForeground()

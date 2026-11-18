@@ -12,6 +12,9 @@ import kotlinx.coroutines.withContext
 import li.gkd.app.app
 import li.gkd.app.data.RawSubscription
 import li.gkd.app.data.XAdSkipRulePack
+import li.gkd.app.data.XAdSkipUnifiedMigration
+import li.gkd.app.data.XAdSkipApprovedRuleStore
+import li.gkd.app.data.XAdSkipRuleUpdatePolicy
 import li.gkd.app.core.state.Loadable
 import li.gkd.db.SubsItem
 import li.gkd.app.data.SubsVersion
@@ -43,22 +46,35 @@ object SubscriptionRepository {
         updateMutex.withStateLock {
             snapshotFlow.value = Loadable.Loading
             try {
-                val items = Db.subsItemDao.queryAll()
+                var items = Db.subsItemDao.queryAll()
                 val initialized = AppStore.storeFlow.value.defaultRulePackInitialized
                 val initialImport = XAdSkipRulePack.prepareFirstRunImport(initialized, items) { path ->
                     app.assets.open(path).bufferedReader().use { it.readText() }
                 }
                 if (initialImport != null) {
+                    XAdSkipRuleUpdatePolicy.validateSubscription(initialImport.subscription)
+                    XAdSkipApprovedRuleStore.remember(initialImport.subscription.version,
+                        app.assets.open(XAdSkipRulePack.UNIFIED_ASSET).use { it.readBytes() })
                     saveLocked(
                         subscription = initialImport.subscription,
                         newItem = initialImport.item,
                         insertItem = true,
                     )
+                    AppStore.updateSettings { it.copy(unifiedRulePackInitialized = true) }
+                    items = Db.subsItemDao.queryAll()
+                }
+                if (items.any { it.id == XAdSkipRulePack.UNIFIED_ID }) {
+                    if (!AppStore.storeFlow.value.unifiedRulePackInitialized) {
+                        AppStore.updateSettings { it.copy(unifiedRulePackInitialized = true) }
+                    }
+                } else if (!AppStore.storeFlow.value.unifiedRulePackInitialized) {
+                    migrateLegacyRules(items)
+                    items = Db.subsItemDao.queryAll()
                 }
                 // APK upgrades refresh installed offline copies independently of first-run setup.
                 // Only their rule content changes; subscription and group choices remain intact.
                 items.filter { item ->
-                    XAdSkipRulePack.Community.entries.any { it.subscriptionId == item.id }
+                    item.id == XAdSkipRulePack.UNIFIED_ID && item.enableUpdate
                 }.forEach { item ->
                     val current = try {
                         load(item.id)
@@ -68,10 +84,26 @@ object SubscriptionRepository {
                         LogUtils.d("无法刷新内置订阅", item.id, e)
                         return@forEach
                     }
-                    XAdSkipRulePack.prepareBundledUpgrade(current) { path ->
-                        app.assets.open(path).bufferedReader().use { it.readText() }
-                    }?.let { upgraded ->
-                        saveLocked(upgraded, preserveGroupConfigs = true)
+                    try {
+                        XAdSkipRulePack.prepareBundledUpgrade(current) { path ->
+                            app.assets.open(path).bufferedReader().use { it.readText() }
+                        }?.let { upgraded ->
+                            val baselineSource = XAdSkipApprovedRuleStore.read(current.version)
+                            val baseline = baselineSource?.let(XAdSkipRulePack::prepareUnified)
+                            if (baseline == null || !XAdSkipRulePack.matchesPackagedContent(current, baseline)) {
+                                LogUtils.d("保留未经确认或自定义的统一规则", current.version)
+                                return@let
+                            }
+                            val nextSource = app.assets.open(XAdSkipRulePack.UNIFIED_ASSET).use { it.readBytes() }
+                            XAdSkipRuleUpdatePolicy.verifyMappingContinuity(requireNotNull(baselineSource), nextSource.decodeToString())
+                            XAdSkipRuleUpdatePolicy.validateSubscription(upgraded)
+                            XAdSkipApprovedRuleStore.remember(upgraded.version, nextSource)
+                            saveLocked(upgraded, preserveGroupConfigs = true)
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        LogUtils.d("内置规则升级失败，保留原规则", e)
                     }
                 }
                 // Mark only after a successful save (or detecting an existing installation).
@@ -80,7 +112,7 @@ object SubscriptionRepository {
                     AppStore.updateSettings { it.copy(defaultRulePackInitialized = true) }
                 }
                 refreshRawSubscriptions(
-                    items = if (initialImport != null) Db.subsItemDao.queryAll() else items,
+                    items = Db.subsItemDao.queryAll(),
                     previous = SubscriptionSnapshot(),
                 )
             } catch (e: CancellationException) {
@@ -91,6 +123,61 @@ object SubscriptionRepository {
             }
         }
         ensureLocalSubscription()
+    }
+
+    private suspend fun migrateLegacyRules(items: List<SubsItem>) {
+        val legacyIds = XAdSkipRulePack.Community.entries.map { it.subscriptionId }.toSet() +
+            li.gkd.app.data.XAdSkipConfig.draftSubscriptionId
+        val legacyItems = items.filter { it.id in legacyIds }
+        if (legacyItems.isEmpty()) return
+        try {
+            val originals = legacyItems.associate { item -> item.id to load(item.id) }
+            originals.values.forEach { current ->
+                val baseline = XAdSkipRulePack.legacyBaseline(current) { path ->
+                    app.assets.open(path).bufferedReader().use { it.readText() }
+                }
+                if (baseline == null || !XAdSkipRulePack.matchesPackagedContent(current, baseline)) {
+                    LogUtils.d("保留已自定义的旧规则，暂不自动合并", current.id)
+                    return
+                }
+            }
+            val source = app.assets.open(XAdSkipRulePack.UNIFIED_ASSET).bufferedReader().use { it.readText() }
+            val unified = XAdSkipRulePack.prepareUnified(source)
+            XAdSkipRuleUpdatePolicy.validateSubscription(unified)
+            val plan = XAdSkipUnifiedMigration.prepare(
+                configs = Db.subscriptionConfigStore.capture(), originals = originals,
+                mappings = XAdSkipUnifiedMigration.mappings(source),
+            )
+            XAdSkipApprovedRuleStore.remember(unified.version, source.toByteArray())
+            SubscriptionPersistence.migrateUnified(unified, plan)
+            AppStore.updateSettings { it.copy(unifiedRulePackInitialized = true) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // A damaged or edited legacy source must not disable existing working rules.
+            LogUtils.d("统一规则迁移未完成，保留原规则", e)
+        }
+    }
+
+    /** Called only after signature, hash, schema and selector validation. */
+    suspend fun applyVerifiedUnifiedUpdate(
+        subscription: RawSubscription,
+        expectedCurrent: RawSubscription,
+    ): Boolean = withContext(Dispatchers.IO) {
+        require(subscription.id == XAdSkipRulePack.UNIFIED_ID)
+        var applied = false
+        updateMutex.withStateLock {
+            val item = Db.subsItemDao.queryAll().find { it.id == XAdSkipRulePack.UNIFIED_ID }
+                ?: return@withStateLock
+            if (!item.enableUpdate) return@withStateLock
+            val current = load(item.id)
+            if (current.version != expectedCurrent.version ||
+                !XAdSkipRulePack.matchesPackagedContent(current, expectedCurrent)) return@withStateLock
+            if (subscription.version <= current.version) return@withStateLock
+            saveLocked(subscription, preserveGroupConfigs = true)
+            applied = true
+        }
+        applied
     }
 
     private suspend fun ensureLocalSubscription() = withContext(Dispatchers.IO) {

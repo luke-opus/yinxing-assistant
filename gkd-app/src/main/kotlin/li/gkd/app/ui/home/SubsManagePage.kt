@@ -36,10 +36,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import li.gkd.app.R
 import li.gkd.app.data.XAdSkipRulePack
+import li.gkd.app.data.XAdSkipRuleUpdater
 import li.gkd.app.core.state.Loadable
 import li.gkd.app.data.subscription.SubscriptionResult
 import li.gkd.app.feature.subscription.UpsertRuleGroupRoute
@@ -121,12 +126,24 @@ private fun useLoadedSubsManagePage(
     val powerWarningItem by vm.powerWarningItemFlow.collectAsStateWithLifecycle()
     val store by storeFlow.collectAsStateWithLifecycle()
     val ruleSummary by SubscriptionState.ruleSummaryFlow.collectAsStateWithLifecycle()
-    val subItems = state.subItems
     val subsIdToRaw = state.subscriptions
+    var showLegacyArchives by remember { mutableStateOf(false) }
+    val canHideArchives = store.unifiedRulePackInitialized &&
+        state.subItems.any { it.id == XAdSkipRulePack.UNIFIED_ID } &&
+        subsIdToRaw[XAdSkipRulePack.UNIFIED_ID]?.hasRule == true
+    val hiddenArchiveIds = if (canHideArchives) state.subItems.filter {
+        !it.enable && it.id in state.legacyArchiveIds
+    }.mapTo(mutableSetOf()) { it.id } else emptySet()
+    val subItems = if (showLegacyArchives) state.subItems else state.subItems.filter { it.id !in hiddenArchiveIds }
     val scope = vm.scope
     val batchBusy by vm.batchBusyFlow.collectAsStateWithLifecycle()
 
-    val refreshing = state.refreshing
+    val manualRefreshing by vm.manualRefreshingFlow.collectAsStateWithLifecycle()
+    val manualRefreshMessage by vm.refreshMessageFlow.collectAsStateWithLifecycle()
+    val unifiedUpdateStatus by XAdSkipRuleUpdater.statusFlow.collectAsStateWithLifecycle()
+    val refreshing = state.refreshing || manualRefreshing || unifiedUpdateStatus.checking
+    val refreshStatusText = if (refreshing) "正在检查规则更新…" else
+        manualRefreshMessage?.let { "上次手动检查：$it" } ?: unifiedUpdateStatus.message
     val pullToRefreshState = rememberPullToRefreshState()
     // 多选仅属于当前订阅 Tab 的临时交互状态，切换 Tab 后按设计清空，不要改为可保存状态。
     val selectionState = rememberMultiSelectionState<Long>()
@@ -148,7 +165,7 @@ private fun useLoadedSubsManagePage(
             title = "订阅设置",
         ) {
             TextMenu(
-                title = "更新订阅",
+                title = "自定义订阅更新间隔",
                 option = UpdateTimeOption.objects.findOption(store.updateSubsInterval),
                 onOptionChange = { vm.setUpdateInterval(it.value) },
             )
@@ -305,20 +322,20 @@ private fun useLoadedSubsManagePage(
                                 onDismissRequest = { expanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text(text = "导入 XAdSkip 迁移草稿（默认关闭）") },
-                                    enabled = !batchBusy,
+                                    text = { Text(text = "检查规则更新") },
+                                    enabled = !batchBusy && !refreshing,
                                     onClick = throttle {
                                         expanded = false
-                                        vm.importXAdSkipDrafts()
+                                        vm.refresh()
                                     },
                                 )
-                                XAdSkipRulePack.Community.entries.forEach { pack ->
+                                if (hiddenArchiveIds.isNotEmpty()) {
                                     DropdownMenuItem(
-                                        text = { Text(text = "导入${pack.title}内置规则（默认关闭）") },
-                                        enabled = !batchBusy,
-                                        onClick = throttle {
+                                        text = { Text(text = if (showLegacyArchives) "隐藏旧版规则归档" else "显示旧版规则归档") },
+                                        enabled = !batchBusy && !reorderSession.dragging,
+                                        onClick = {
                                             expanded = false
-                                            vm.importCommunityRules(pack)
+                                            showLegacyArchives = !showLegacyArchives
                                         },
                                     )
                                 }
@@ -379,79 +396,82 @@ private fun useLoadedSubsManagePage(
             rememberReorderableLazyListState(lazyListState) { from, to ->
                 reorderSession.move(from.index, to.index)
             }
-        PullToRefreshBox(
-            modifier = Modifier.padding(contentPadding),
-            state = pullToRefreshState,
-            isRefreshing = refreshing,
-            onRefresh = vm::refresh,
-        ) {
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier.fillMaxSize(),
+        Column(modifier = Modifier.padding(contentPadding)) {
+            refreshStatusText?.let { message ->
+                Text(
+                    text = message,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            PullToRefreshBox(
+                modifier = Modifier.weight(1f),
+                state = pullToRefreshState,
+                isRefreshing = refreshing,
+                onRefresh = vm::refresh,
             ) {
-                itemsIndexed(orderSubItems, { _, subItem -> subItem.id }) { index, subItem ->
-                    // Keep the initial gesture alive after it enters selection mode.
-                    val canDrag = reorderSession.dragging ||
-                        (!refreshing && !batchBusy && !isSelectedMode && orderSubItems.size > 1)
-                    ReorderableItem(
-                        state = reorderableLazyColumnState,
-                        key = subItem.id,
-                        enabled = canDrag,
-                    ) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        SubsItemCard(
-                            modifier = Modifier.longPressDraggableHandle(
-                                enabled = canDrag,
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    itemsIndexed(orderSubItems, { _, subItem -> subItem.id }) { index, subItem ->
+                        // Keep the initial gesture alive after it enters selection mode.
+                        val canDrag = reorderSession.dragging ||
+                            (!refreshing && !batchBusy && !isSelectedMode && orderSubItems.size > 1)
+                        ReorderableItem(
+                            state = reorderableLazyColumnState,
+                            key = subItem.id,
+                            enabled = canDrag,
+                        ) {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            SubsItemCard(
+                                modifier = Modifier.longPressDraggableHandle(
+                                    enabled = canDrag,
+                                    interactionSource = interactionSource,
+                                    onDragStarted = {
+                                        reorderSession.startDragging()
+                                        if (!isSelectedMode) {
+                                            selectionState.select(subItem.id)
+                                        }
+                                    },
+                                    onDragStopped = {
+                                        val result = reorderSession.finishDragging()
+                                        if (result.moved) {
+                                            selectionState.clear()
+                                        }
+                                        result.reorderedItems?.let(vm::updateOrder)
+                                    },
+                                ),
                                 interactionSource = interactionSource,
-                                onDragStarted = {
-                                    reorderSession.startDragging()
-                                    if (!isSelectedMode) {
+                                subsItem = subItem,
+                                subscription = subsIdToRaw[subItem.id],
+                                index = index + 1,
+                                isSelectedMode = isSelectedMode,
+                                selectionEnabled = !batchBusy && !refreshing && !reorderSession.dragging,
+                                handlesLongPress = !canDrag,
+                                onSelect = {
+                                    if (!batchBusy && !refreshing && !reorderSession.dragging) {
                                         selectionState.select(subItem.id)
                                     }
                                 },
-                                onDragStopped = {
-                                    val result = reorderSession.finishDragging()
-                                    if (result.moved) {
-                                        selectionState.clear()
-                                    }
-                                    result.reorderedItems?.let { reorderedItems ->
-                                        val changedItems = reorderedItems.mapIndexedNotNull { index, item ->
-                                            item.copy(order = index).takeIf { it.order != item.order }
-                                        }
-                                        if (changedItems.isNotEmpty()) {
-                                            vm.updateOrder(changedItems)
-                                        }
-                                    }
+                                isSelected = selectedIds.contains(subItem.id),
+                                loadError = state.loadErrors[subItem.id],
+                                refreshError = state.refreshErrors[subItem.id],
+                                refreshing = refreshing,
+                                onOpen = {
+                                    mainVm.subsSheet.show(subItem.id)
                                 },
-                            ),
-                            interactionSource = interactionSource,
-                            subsItem = subItem,
-                            subscription = subsIdToRaw[subItem.id],
-                            index = index + 1,
-                            isSelectedMode = isSelectedMode,
-                            selectionEnabled = !batchBusy && !refreshing && !reorderSession.dragging,
-                            handlesLongPress = !canDrag,
-                            onSelect = {
-                                if (!batchBusy && !refreshing && !reorderSession.dragging) {
-                                    selectionState.select(subItem.id)
-                                }
-                            },
-                            isSelected = selectedIds.contains(subItem.id),
-                            loadError = state.loadErrors[subItem.id],
-                            refreshError = state.refreshErrors[subItem.id],
-                            refreshing = refreshing,
-                            onOpen = {
-                                mainVm.subsSheet.show(subItem.id)
-                            },
-                            onCheckedChange = { checked ->
-                                vm.requestSubscriptionEnabled(subItem, checked)
-                            },
-                            onSelectedChange = { selectionState.toggle(subItem.id) },
-                        )
+                                onCheckedChange = { checked ->
+                                    vm.requestSubscriptionEnabled(subItem, checked)
+                                },
+                                onSelectedChange = { selectionState.toggle(subItem.id) },
+                            )
+                        }
                     }
-                }
-                item(ListPlaceholder.KEY, ListPlaceholder.TYPE) {
-                    Spacer(modifier = Modifier.height(EmptyHeight))
+                    item(ListPlaceholder.KEY, ListPlaceholder.TYPE) {
+                        Spacer(modifier = Modifier.height(EmptyHeight))
+                    }
                 }
             }
         }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
@@ -43,6 +44,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import kotlinx.serialization.Serializable
 import li.gkd.app.data.date
+import li.gkd.app.data.actionDescription
 import li.gkd.app.a11y.ActionLogRecording
 import li.gkd.app.data.showActivityId
 import li.gkd.app.ui.component.AppNameText
@@ -158,6 +160,14 @@ fun ActionLogPage(route: ActionLogRoute) {
             modifier = Modifier.scaffoldPadding(contentPadding),
             state = listState,
         ) {
+            item("recording-info") {
+                Text(
+                    text = "自动记录已执行的规则，无需开启调试服务。记录仅保存在本机，较早记录会自动清理；执行完成不代表页面一定已关闭。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(itemHorizontalPadding),
+                )
+            }
             if (lastWriteFailed) {
                 item("write-failure") {
                     Text(
@@ -293,7 +303,11 @@ private fun ActionLogCard(
                             .background(MaterialTheme.colorScheme.secondary)
                             .size(4.dp)
                     )
-                    AppNameText(appId = actionLog.appId, modifier = Modifier.weight(1f))
+                    AppNameText(
+                        appId = actionLog.appId,
+                        fallbackName = actionLog.appName,
+                        modifier = Modifier.weight(1f),
+                    )
                     PerfIcon(
                         imageVector = PerfIcon.KeyboardArrowRight,
                         modifier = Modifier
@@ -325,6 +339,10 @@ private fun ActionLogCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary,
                 )
+                Text(
+                    text = actionLog.actionDescription,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) {
                     val showActivityId = actionLog.showActivityId
                     if (showActivityId != null) {
@@ -336,13 +354,13 @@ private fun ActionLogCard(
                         )
                     } else {
                         Text(
-                            text = "null",
+                            text = "未取得页面名称",
                             color = LocalContentColor.current.copy(alpha = 0.5f),
                         )
                     }
                     if (subsId == null) {
                         Row {
-                            Text(text = subscription?.name ?: "id=${actionLog.subsId}")
+                            Text(text = actionLog.subsName ?: subscription?.name ?: "规则库 ${actionLog.subsId}")
                             val lineHeightDp = LocalDensity.current.run {
                                 LocalTextStyle.current.lineHeight.toDp()
                             }
@@ -367,28 +385,27 @@ private fun ActionLogCard(
                     Row(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val groupDesc = group?.name.toString()
+                        val currentVersionMatches = subscription?.version == actionLog.subsVersion
+                        val groupDesc = actionLog.groupName
+                            ?: group?.name?.takeIf { currentVersionMatches }
+                            ?: "规则组 ${actionLog.groupKey}"
                         val textColor = LocalContentColor.current.let {
-                            if (group?.name == null) it.copy(alpha = 0.5f) else it
+                            if (actionLog.groupName == null && !currentVersionMatches) it.copy(alpha = 0.5f) else it
                         }
                         GroupNameText(
                             isGlobal = actionLog.groupType == RuleGroupType.Global,
                             text = groupDesc,
                             color = textColor,
                         )
-                        val ruleDesc = rule?.name ?: (if ((group?.rules?.size ?: 0) > 1) {
-                            val keyDesc = actionLog.ruleKey?.let { "key=$it, " } ?: ""
-                            "${keyDesc}index=${actionLog.ruleIndex}"
-                        } else {
-                            null
-                        })
-                        if (ruleDesc != null) {
-                            Text(
-                                text = ruleDesc,
-                                modifier = Modifier.padding(start = 8.dp),
-                                color = LocalContentColor.current.copy(alpha = 0.8f),
-                            )
-                        }
+                        val ruleDesc = actionLog.ruleName
+                            ?: rule?.name?.takeIf { currentVersionMatches }
+                            ?: actionLog.ruleKey?.let { "规则 $it" }
+                            ?: "第 ${actionLog.ruleIndex + 1} 条规则"
+                        Text(
+                            text = ruleDesc,
+                            modifier = Modifier.padding(start = 8.dp),
+                            color = LocalContentColor.current.copy(alpha = 0.8f),
+                        )
                     }
                 }
             }
@@ -413,6 +430,22 @@ private fun ActionLogDialog(
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
+            SelectionContainer {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text("触发详情", style = MaterialTheme.typography.titleMedium)
+                    Text("应用：${actionLog.appName ?: actionLog.appId}")
+                    if (actionLog.appName != null) Text(actionLog.appId)
+                    Text("时间：${actionLog.date}")
+                    Text("行为：${actionLog.actionDescription}")
+                    Text("规则组：${actionLog.groupName ?: actionLog.groupKey}")
+                    Text("规则：${actionLog.ruleName ?: "第 ${actionLog.ruleIndex + 1} 条"}（${actionLog.ruleKey?.let { "key=$it" } ?: "index=${actionLog.ruleIndex}"}）")
+                    Text("规则库：${actionLog.subsName ?: actionLog.subsId} · v${actionLog.subsVersion}")
+                }
+            }
+            HorizontalDivider()
             ItemText(
                 text = "查看规则",
                 onClick = onOpenRule,

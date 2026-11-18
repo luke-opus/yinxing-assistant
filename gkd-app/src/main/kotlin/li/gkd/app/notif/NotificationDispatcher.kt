@@ -41,6 +41,7 @@ object NotificationDispatcher {
             .setContentIntent(contentIntent)
             .setOngoing(spec.ongoing)
             .setAutoCancel(spec.autoCancel)
+            .setOnlyAlertOnce(spec is ForegroundNotification)
 
         spec.stopService?.let { serviceClass ->
             val stopIntent = PendingIntent.getBroadcast(

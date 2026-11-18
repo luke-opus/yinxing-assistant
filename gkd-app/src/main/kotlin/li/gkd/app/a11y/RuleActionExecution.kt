@@ -36,7 +36,12 @@ object RuleActionExecution {
 
     suspend fun checkCanDispatch() = dispatchGuard().invoke()
 
-    fun capture(rule: ResolvedRule, origin: TopActivity, time: Long): ActionLog = ActionLog(
+    fun capture(
+        rule: ResolvedRule,
+        origin: TopActivity,
+        time: Long,
+        appName: String? = null,
+    ): ActionLog = ActionLog(
         appId = origin.appId,
         activityId = origin.activityId,
         subsId = rule.subsItem.id,
@@ -46,6 +51,10 @@ object RuleActionExecution {
         ruleIndex = rule.index,
         ruleKey = rule.key,
         ctime = time,
+        appName = appName,
+        subsName = rule.rawSubs.name,
+        groupName = rule.g.group.name,
+        ruleName = rule.rule.name,
     )
 
     suspend fun execute(
@@ -61,7 +70,16 @@ object RuleActionExecution {
         return withContext(NonCancellable + origin) {
             // Fallbacks check this original owner, not the NonCancellable bookkeeping job.
             perform().also { result ->
-                if (result.result) onSuccess(record, result)
+                if (result.result) {
+                    onSuccess(
+                        record.copy(
+                            action = result.action,
+                            positionX = result.position?.first,
+                            positionY = result.position?.second,
+                        ),
+                        result,
+                    )
+                }
             }
         }
     }

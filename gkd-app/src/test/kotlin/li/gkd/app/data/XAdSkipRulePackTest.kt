@@ -23,18 +23,19 @@ class XAdSkipRulePackTest {
             }
         )
         assertTrue(imported.item.enable)
-        assertFalse(imported.item.enableUpdate)
+        assertTrue(imported.item.enableUpdate)
         assertNull(imported.item.updateUrl)
         assertNull(imported.subscription.updateUrl)
         assertNull(imported.subscription.checkUpdateUrl)
         assertEquals(imported.item.id, imported.subscription.id)
         assertTrue(imported.subscription.hasRule)
 
-        // Enabling the subscription must not turn on groups the author left disabled.
-        val original = RawSubscription.parse(source(XAdSkipRulePack.Community.GANLIN))
+        val original = XAdSkipRulePack.prepareUnified(File("src/main/assets/${XAdSkipRulePack.UNIFIED_ASSET}").readText())
+        assertEquals(XAdSkipRulePack.UNIFIED_ID, imported.item.id)
         assertEquals(original.apps, imported.subscription.apps)
         assertEquals(original.globalGroups, imported.subscription.globalGroups)
-        assertEquals(original.categories, imported.subscription.categories)
+        assertTrue(imported.subscription.appGroups.any { it.enable == false })
+        XAdSkipRuleUpdatePolicy.validateSubscription(imported.subscription)
     }
 
     @Test
@@ -46,16 +47,14 @@ class XAdSkipRulePackTest {
     }
 
     @Test
-    fun newInstallationSelectsTheBundledSourceWithMostRuleGroups() {
+    fun newInstallationImportsOneUnifiedSourceInsteadOfChoosingAnUpstream() {
+        val reads = mutableListOf<String>()
         val imported = requireNotNull(XAdSkipRulePack.prepareFirstRunImport(false, emptyList()) { path ->
-            val pack = XAdSkipRulePack.Community.entries.single { it.assetPath == path }
-            val groupCount = if (pack == XAdSkipRulePack.Community.AOGUAI) 2 else 1
-            val groups = (1..groupCount).joinToString(",") { key ->
-                "{key:$key,name:'测试规则$key',rules:'[text=\"跳过\"]'}"
-            }
-            "{id:${pack.upstreamId},name:'测试订阅',version:1,apps:[{id:'example.app',groups:[$groups]}]}"
+            reads += path
+            """{"id":2026111801,"name":"统一测试","version":1,"apps":[{"id":"example.app","groups":[{"key":1,"name":"开屏广告","rules":"[text=\"跳过\"]"}]}]}"""
         })
-        assertEquals(XAdSkipRulePack.Community.AOGUAI.subscriptionId, imported.subscription.id)
+        assertEquals(listOf(XAdSkipRulePack.UNIFIED_ASSET), reads)
+        assertEquals(XAdSkipRulePack.UNIFIED_ID, imported.subscription.id)
         assertTrue(imported.item.enable)
     }
 

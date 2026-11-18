@@ -1,0 +1,41 @@
+@charset "UTF-8";
+@import url("feedback.css");
+:root{--blue:#176952;--ink:#173b32;--muted:#4e665f;--line:#b8ccc4;background:#f3f8f4}
+.wish-nav{display:flex;flex-wrap:wrap;gap:18px;font-size:.94rem;font-weight:650}
+.wish-nav a{display:inline-flex;align-items:center;min-height:44px}
+.primary:hover{background:#10523f}
+.secondary{background:#eaf5ee;color:#165a46;border-color:#b8d5c5}
+.secondary:hover{background:#dceee2}
+.quiet{color:#365c4f;border-color:var(--line)}
+.quiet:hover{background:#edf5ef}
+.expectation{margin:0;padding:16px 18px;border-left:3px solid #9b772b;background:#fff8e8;border-radius:0 8px 8px 0;color:#63502b;font-size:.94rem}
+.optional-media{border-block:1px solid #dbe8df;margin:4px 0 26px}
+.optional-media>summary{cursor:pointer;font-weight:700;padding:17px 0;min-height:58px}
+.optional-media .attachment-section{border:0;margin:0;padding:6px 0 22px}
+.privacy-reminder{background:#edf6f0;color:#335d4d}
+#submit-wish{width:100%}
+.received-mark{display:inline-flex;align-items:center;justify-content:center;width:62px;height:62px;border-radius:50%;background:#edf5ee;color:#176952;font-size:2rem;font-weight:700;margin-bottom:20px}
+.public-wishes{margin-top:50px;scroll-margin-top:24px}
+.list-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}
+.list-heading .eyebrow{margin-bottom:8px}
+.list-heading h2{font-size:1.5rem}
+.status-legend{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 20px}
+.wish-status{display:inline-flex;align-items:center;min-height:30px;padding:3px 11px;border-radius:20px;font-size:.82rem;font-weight:700;white-space:nowrap}
+.wish-status.pending{background:#edf0f3;color:#4b5b69}
+.wish-status.planned{background:#fff1ce;color:#775614}
+.wish-status.completed{background:#dcf0e3;color:#176340}
+.list-status{font-size:.95rem;color:var(--muted);white-space:pre-line}
+.list-status:empty{display:none}
+.list-status.is-error{background:#fff0ed;border:1px solid #e7b9af;border-radius:9px;color:#8c2b22;padding:14px 16px}
+.empty-wishes{padding:26px 24px;border:1px dashed #b5cdbf;border-radius:14px;background:#fafdfa;color:var(--muted)}
+.wish-list{list-style:none;padding:0;margin:20px 0;display:grid;gap:18px}
+.wish-card{border:1px solid #d4e2d9;border-radius:15px;background:#fff;padding:24px;overflow-wrap:anywhere}
+.wish-card-header{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:14px}
+.wish-card-title{font-size:.85rem;font-weight:650;color:var(--muted);margin:0}
+.wish-description{font-size:1.03rem;white-space:pre-wrap;margin:0 0 18px;line-height:1.85}
+.developer-note{background:#f2f7f3;border-left:3px solid #a7c9b6;padding:13px 16px;margin:0;border-radius:0 8px 8px 0}
+.developer-note h3{font-size:.9rem;margin:0 0 4px}
+.developer-note p{margin:0;color:#3c5a4f;white-space:pre-wrap;font-size:.95rem}
+.wish-updated{margin:14px 0 0;color:var(--muted);font-size:.78rem}
+.list-actions{display:flex;justify-content:center}
+@media(max-width:600px){.wish-nav{gap:12px;font-size:.85rem}.site-header{gap:12px;flex-wrap:wrap}.list-heading{align-items:flex-start}.list-heading h2{font-size:1.3rem}.list-heading .button{padding:9px 14px;min-height:48px}.wish-card{padding:20px}.public-wishes{margin-top:36px}}

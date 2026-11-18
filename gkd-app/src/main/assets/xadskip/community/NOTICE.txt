@@ -1,7 +1,7 @@
 XAdSkip 内置社区规则 / Bundled community subscriptions
 
-原始规则与署名按各来源许可证保留。内置副本使用独立订阅标识，随应用升级刷新，保留用户开关；关闭网络更新。
-Original rules and notices are preserved. Bundled copies use separate IDs, refresh with app updates, and preserve user settings; network updates are disabled.
+原始规则与署名按各来源许可证保留，用于生成银杏助手统一规则；新安装只启用统一库。原始来源副本不直接网络更新；统一库只接受本站签名发布，保留用户开关。
+Original sources and notices are retained for the unified library. New installations enable only the unified library, which accepts signed first-party releases and preserves user settings. Source snapshots do not update directly from upstream.
 
 ganlinte: https://github.com/ganlinte/GKD-subscription
 Commit: 4746d192b4c57a4b62ed92a7f5deaf79e64fa811

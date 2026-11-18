@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" debug_suffix="true">XAdSkip</string>
-    <string name="a11y_desc">读取屏幕中的文字和按钮，按您启用的规则自动点击，例如跳过广告。\n\n可在 XAdSkip 首页暂停自动点击，也可在系统设置中关闭服务。</string>
+    <string name="app_name" debug_suffix="true">银杏助手</string>
+    <string name="a11y_desc">帮您跳过部分广告，少点几下。\n\n开启后会读取屏幕中的文字和按钮，并按您启用的规则自动点击。此功能必须由您确认无障碍授权，可能无法处理所有广告。\n\n可在银杏助手首页暂停辅助、查看触发记录，也可在系统设置中关闭服务。</string>
     <string name="import_backup" debug_suffix="true">导入备份</string>
     <string name="capture_snapshot" debug_suffix="true">捕获快照</string>
     <string name="http_server" debug_suffix="true">HTTP服务</string>

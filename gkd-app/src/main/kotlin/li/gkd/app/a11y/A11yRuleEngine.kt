@@ -18,6 +18,7 @@ import li.gkd.app.data.ActionPerformer
 import li.gkd.app.data.AppRule
 import li.gkd.app.data.ResolvedRule
 import li.gkd.app.data.RuleStatus
+import li.gkd.app.data.appinfo.AppInfoRepository
 import li.gkd.app.platform.lifecycle.MainActivityVisibility
 import li.gkd.app.service.EventService
 import li.gkd.app.service.topAppIdFlow
@@ -383,14 +384,21 @@ class A11yRuleEngine(private val service: A11yCommonImpl) {
             if (!effective || !storeFlow.value.enableMatch) return
             val record = RuleActionExecution.capture(
                 rule, activityRule.topActivity, System.currentTimeMillis(),
+                appName = AppInfoRepository.appInfoMapFlow.value[
+                    activityRule.topActivity.appId
+                ]?.name,
             )
             RuleActionExecution.execute(
                 record = record,
                 perform = { rule.performAction(target) },
                 canStartAction = { effective && storeFlow.value.enableMatch },
                 onSuccess = { completedRecord, actionResult ->
-                    rule.trigger()
-                    ActionLogRecording.insert(completedRecord)
+                    // A counter/settings failure must not discard an action already performed.
+                    try {
+                        rule.trigger()
+                    } finally {
+                        ActionLogRecording.insert(completedRecord)
+                    }
                     if (actionResult.action != ActionPerformer.None.action) {
                         runCatching { showActionToast(rule) }
                     }

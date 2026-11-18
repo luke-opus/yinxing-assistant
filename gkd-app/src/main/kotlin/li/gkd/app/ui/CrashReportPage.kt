@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import li.gkd.app.META
 import li.gkd.app.data.CrashData
 import li.gkd.app.ui.component.CopyTextCard
 import li.gkd.app.ui.component.EmptyText
@@ -59,6 +60,7 @@ import li.gkd.app.util.format
 import li.gkd.app.ui.share.launchUi
 import li.gkd.app.util.throttle
 import li.gkd.app.util.ToastUtils.toast
+import li.gkd.app.util.IntentUtils
 
 
 @Serializable
@@ -120,7 +122,9 @@ fun CrashReportPage() {
                 BottomAppBar {
                     Spacer(modifier = Modifier.weight(1f))
                     TextButton(
-                        onClick = throttle { mainVm.openUrl(XAdSkipConfig.feedbackUrl) },
+                        onClick = throttle {
+                        IntentUtils.openUri(XAdSkipConfig.feedbackUrlForVersion(META.versionName, META.versionCode))
+                        },
                     ) {
                         Text(text = "问题反馈")
                     }

@@ -4,7 +4,11 @@
 
 当前随包为甘霖 v72（MIT）和奥怪 v89（GPL-3.0-only），对应固定提交的完整源码及发布文件保存于 `third_party/gkd-subscriptions/releases/`。原订阅、许可证、作者署名、README 和奥怪 LEGAL.md 均按原始字节保留。历史 v71/v88 完整源码快照保留在原目录；v72/v89 的 src、构建脚本和声明已一并保存，未运行上游代码。确切提交与逐文件 SHA-256 见 `UPSTREAM.json` 和 `rules/community-snapshots.json`。
 
-两套订阅及声明通过 `tools/bundle_community_rules.py` 保存于 APK 的 `assets/xadskip/community/`。新安装默认启用规则组最多的一套；原规则组默认开关不变。内置副本使用独立订阅 ID，关闭网络更新；应用升级时刷新已有内置副本，保留用户启用状态和规则组配置。其他订阅及自定义规则不参与刷新。来源和数量见 [COMMUNITY_SOURCES.md](COMMUNITY_SOURCES.md)。
+原始订阅与声明由 `tools/bundle_community_rules.py` 保存于 APK 的 `assets/xadskip/community/`，用于可追溯构建，不再让新用户选择来源。`tools/build_unified_rules.py` 将两个 GKD 来源与经过专门转换的李跳跳草稿生成为 `assets/xadskip/unified/rules.json`。新安装仅默认启用“银杏助手统一规则”，非广告功能、李跳跳草稿及重叠候选默认关闭；保留原作者关闭的广告组。
+
+统一库接受本站公钥签名的固定版本发布，先验证格式、版本、SHA-256、组身份映射和选择器，再原子替换；网络或校验失败继续使用旧规则。用户禁用、排除及本地自定义不因更新重置。已安装旧库迁移保留原文件、配置和历史日志作为关闭归档；来源存在手工内容改写或未知版本时，保留原库，不静默替换。
+
+去重标准、冲突策略、固定身份表、更新协议与限制见 [UNIFIED_RULES.md](UNIFIED_RULES.md)。规则数据分别保留 MIT、GPL-3.0 和 AGPL-3.0 所需声明；合并数据的分发遵守 AGPL-3.0 及原来源条款。GPL-3.0 与 AGPL-3.0 的第 13 条均明确规定两者组合时各部分的条款仍继续适用。完整对应来源及修改脚本随源码发布，独立应用代码的既有 GPL-3.0 声明不移除。
 
 ## 李跳跳社区规则迁移
 

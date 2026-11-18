@@ -1,5 +1,8 @@
 package li.gkd.app.ui.home
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -10,6 +13,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import li.gkd.app.data.RawSubscription
+import li.gkd.app.app
+import li.gkd.app.data.XAdSkipConfig
+import li.gkd.app.data.XAdSkipRuleUpdater
 import li.gkd.app.data.XAdSkipRulePack
 import li.gkd.db.SubsItem
 import li.gkd.app.store.AppStore.storeFlow
@@ -30,6 +36,7 @@ data class SubsManageUiState(
     val subItems: List<SubsItem>,
     val subscriptions: Map<Long, RawSubscription>,
     val refreshing: Boolean,
+    val legacyArchiveIds: Set<Long>,
     val loadErrors: Map<Long, Exception>,
     val refreshErrors: Map<Long, Exception>,
 )
@@ -38,15 +45,22 @@ private fun buildSubsManageUiState(
     subItems: List<SubsItem>,
     snapshot: SubscriptionSnapshot,
     refreshing: Boolean,
+    legacyArchiveIds: Set<Long>,
 ) = SubsManageUiState(
     subItems = subItems,
     subscriptions = snapshot.subscriptions,
     refreshing = refreshing,
+    legacyArchiveIds = legacyArchiveIds,
     loadErrors = snapshot.loadErrors,
     refreshErrors = snapshot.updateErrors,
 )
 
 class SubsManageVm : BaseViewModel() {
+    private val refreshMutex = MutexState()
+    val manualRefreshingFlow: StateFlow<Boolean> get() = refreshMutex.state
+    val refreshMessageFlow: StateFlow<String?>
+        field = MutableStateFlow(null)
+
     private val batchMutex = MutexState()
     val batchBusyFlow: StateFlow<Boolean> get() = batchMutex.state
 
@@ -60,7 +74,21 @@ class SubsManageVm : BaseViewModel() {
         field = MutableStateFlow(null)
 
     val uiState: StateFlow<Loadable<SubsManageUiState>> =
-        SubscriptionRepository.snapshotFlow.flatMapLatest { snapshotState ->
+        SubscriptionRepository.snapshotFlow.map { snapshotState ->
+            val archiveIds = if (snapshotState is Loadable.Ready) withContext(Dispatchers.IO) {
+                snapshotState.value.subscriptions.values.mapNotNull { subscription ->
+                    if (subscription.id != XAdSkipConfig.draftSubscriptionId &&
+                        XAdSkipRulePack.Community.entries.none { it.subscriptionId == subscription.id }) return@mapNotNull null
+                    val baseline = runCatching {
+                        XAdSkipRulePack.legacyBaseline(subscription) { path ->
+                            app.assets.open(path).bufferedReader().use { it.readText() }
+                        }
+                    }.getOrNull()
+                    subscription.id.takeIf { baseline != null && XAdSkipRulePack.matchesPackagedContent(subscription, baseline) }
+                }.toSet()
+            } else emptySet()
+            snapshotState to archiveIds
+        }.flatMapLatest { (snapshotState, archiveIds) ->
             when (snapshotState) {
                 Loadable.Loading -> flowOf(Loadable.Loading)
                 is Loadable.Failure -> flowOf(snapshotState)
@@ -72,6 +100,7 @@ class SubsManageVm : BaseViewModel() {
                         subItems = subItems,
                         snapshot = snapshotState.value,
                         refreshing = refreshing,
+                        legacyArchiveIds = archiveIds,
                     )
                 }.map<SubsManageUiState, Loadable<SubsManageUiState>> { Loadable.Ready(it) }
                     .catch { emit(Loadable.Failure(it)) }
@@ -96,27 +125,31 @@ class SubsManageVm : BaseViewModel() {
 
     fun refresh() {
         scope.launchUi {
-            SubscriptionRepository.refresh().message?.let { toast(it) }
-        }
-    }
-
-    fun importXAdSkipDrafts() {
-        scope.launchUi {
-            runBatchAction {
-                val imported = li.gkd.app.data.XAdSkipRulePack.importDrafts()
-                toast(if (imported) "已导入迁移草稿；请实机验证后逐项启用" else "迁移草稿已存在，已保留你的修改")
-            }
-        }
-    }
-
-    fun importCommunityRules(pack: XAdSkipRulePack.Community) {
-        scope.launchUi {
-            runBatchAction {
-                val imported = XAdSkipRulePack.importCommunity(pack)
-                toast(
-                    if (imported) "已导入${pack.title}规则；请打开订阅开关后使用"
-                    else "${pack.title}内置规则已存在，已保留你的修改"
-                )
+            refreshMutex.tryWithStateLock {
+                refreshMessageFlow.value = null
+                val items = Db.subsItemDao.queryAll()
+                val unified = items.find { it.id == XAdSkipRulePack.UNIFIED_ID }
+                val messages = mutableListOf<String>()
+                if (unified != null) {
+                    if (!unified.enableUpdate) {
+                        messages += "统一库的自动更新已关闭，本次保留当前规则"
+                    } else {
+                        val before = XAdSkipRuleUpdater.statusFlow.value
+                        XAdSkipRuleUpdater.checkOnAppOpen(force = true)
+                        val result = if (XAdSkipRuleUpdater.statusFlow.value.checking) {
+                            XAdSkipRuleUpdater.statusFlow.first { !it.checking }
+                        } else XAdSkipRuleUpdater.statusFlow.value
+                        messages += if (result === before && !before.checking) {
+                            "本次未完成新的规则检查，请确认更新开关或稍后重试"
+                        } else result.message ?: "本次规则检查未返回结果，当前规则保持不变"
+                    }
+                }
+                if (items.any { it.id != XAdSkipRulePack.UNIFIED_ID && it.enableUpdate && it.updateUrl != null }) {
+                    SubscriptionRepository.refresh().message?.let { messages += "自定义订阅：$it" }
+                }
+                val message = messages.joinToString("；").ifEmpty { "当前没有可在线更新的规则" }
+                refreshMessageFlow.value = message
+                toast(message)
             }
         }
     }
@@ -126,7 +159,19 @@ class SubsManageVm : BaseViewModel() {
 
     fun updateOrder(items: List<SubsItem>) {
         scope.launchUi {
-            Db.subsItemDao.batchUpdateOrder(items)
+            val current = Db.subsItemDao.queryAll()
+            val visibleIds = items.map { it.id }.toSet()
+            if (visibleIds.size != items.size || !current.map { it.id }.containsAll(visibleIds)) {
+                toast("规则列表已改变，请重新排序")
+                return@launchUi
+            }
+            val byId = current.associateBy { it.id }
+            val ordered = items.iterator()
+            // Reorder only occupied visible slots; hidden archives keep their place.
+            val next = current.map { item ->
+                if (item.id in visibleIds) byId.getValue(ordered.next().id) else item
+            }.mapIndexedNotNull { index, item -> item.copy(order = index).takeIf { it.order != item.order } }
+            if (next.isNotEmpty()) Db.subsItemDao.batchUpdateOrder(next)
         }
     }
 

@@ -12,10 +12,12 @@ import li.gkd.app.util.UpdateTimeOption
 @Serializable
 data class SettingsStore(
     val defaultRulePackInitialized: Boolean = false,
+    val unifiedRulePackInitialized: Boolean = false,
     val enableAutomator: Boolean = false,
     val automatorMode: Int = AutomatorModeOption.A11yMode.value,
     val enableMatch: Boolean = true,
     val enableStatusService: Boolean = false,
+    val statusNotificationPolicyVersion: Int = 0,
     val excludeFromRecents: Boolean = false,
     val captureScreenshot: Boolean = false,
     val screenshotTargetAppId: String = "",

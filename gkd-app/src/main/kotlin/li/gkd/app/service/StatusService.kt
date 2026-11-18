@@ -89,10 +89,16 @@ class StatusService : LifecycleHookService() {
     init {
         useServicePresence(
             stateFlow = isRunning,
-            name = "常驻通知",
+            name = "后台状态服务",
             startToastDelayMillis = if (app.justStarted) 1000 else 0,
         )
         onCreated {
+            // Android may restart a previously requested service after an app update.
+            // Respect the migrated opt-out before posting an optional notification.
+            if (!storeFlow.value.enableStatusService) {
+                stopSelf()
+                return@onCreated
+            }
             if (!defaultStatusNotification.startForeground()) return@onCreated
             lifecycleScope.launch {
                 combine(

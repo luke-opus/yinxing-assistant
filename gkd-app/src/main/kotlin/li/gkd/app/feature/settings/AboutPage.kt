@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -24,14 +25,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import li.gkd.app.data.XAdSkipConfig
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import li.gkd.app.META
+import li.gkd.app.R
 import li.gkd.app.store.AppStore
 import li.gkd.app.ui.component.PerfIcon
 import li.gkd.app.ui.component.PerfIconButton
@@ -40,10 +41,8 @@ import li.gkd.app.ui.component.SettingItem
 import li.gkd.app.ui.component.TextSwitch
 import li.gkd.app.ui.share.LocalMainViewModel
 import li.gkd.app.ui.style.EmptyHeight
-import li.gkd.app.ui.style.itemPadding
 import li.gkd.app.ui.style.titleItemPadding
-import li.gkd.app.ui.share.launchUiAction
-import li.gkd.app.util.throttle
+import li.gkd.app.util.IntentUtils
 
 @Serializable
 data object AboutRoute : NavKey
@@ -96,11 +95,11 @@ fun AboutPage() {
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = "X",
-                        fontSize = 52.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    Icon(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(96.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -127,21 +126,21 @@ fun AboutPage() {
                 val settings by AppStore.storeFlow.collectAsStateWithLifecycle()
                 SettingItem(
                     title = if (checking) "正在检查更新…" else "检查新版本",
-                    subtitle = if (checking) "正在连接 XAdSkip 官网" else
+                    subtitle = if (checking) "正在连接${META.appName}官网" else
                         message ?: "当前版本 v${META.versionName}",
-                    onClickLabel = "检查 XAdSkip 新版本",
+                    onClickLabel = "检查${META.appName}新版本",
                     onClick = if (checking) null else ({ updateStatus.checkUpdate(manual = true) }),
                 )
                 TextSwitch(
                     title = "自动检查新版本",
-                    subtitle = "每天最多检查一次；下载和安装由你确认",
+                    subtitle = "进入应用时检查，间隔至少 15 分钟；下载和安装由你确认",
                     checked = settings.autoCheckAppUpdate,
                     onCheckedChange = updateStatus::setAutoCheck,
                 )
             }
             SettingItem(
                 imageVector = null,
-                title = "XAdSkip 网站",
+                title = "${META.appName}网站",
                 onClick = { mainVm.openUrl(XAdSkipConfig.homePageUrl) },
             )
             SettingItem(
@@ -202,27 +201,17 @@ private fun FeedbackSection() {
         style = MaterialTheme.typography.titleSmall,
         color = primaryColor,
     )
-    Column(
-        modifier = Modifier
-            .clickable(onClick = throttle(mainVm.scope.launchUiAction {
-                val noticeText = "请描述 XAdSkip 的问题、手机型号和系统版本；规则问题请注明应用及规则名称。\n\n" +
-                    "日志和快照可能含界面文字、账号或聊天信息，请先检查并删除敏感内容。不要发送密码、验证码或无关身份证件。\n\n" +
-                    "继续后可打开邮件应用联系 1345134186@qq.com。"
-                if (!mainVm.dialogRequests.confirm(
-                    title = "反馈须知",
-                    text = noticeText,
-                    confirmText = "继续",
-                    dismissOnRequest = true,
-                )) return@launchUiAction
-                mainVm.openUrl(XAdSkipConfig.feedbackUrl)
-            }))
-            .fillMaxWidth()
-            .itemPadding()
-    ) {
-        Text(
-            text = "问题反馈",
-            style = MaterialTheme.typography.bodyLarge,
-        )
-    }
+    SettingItem(
+        title = "问题反馈",
+        subtitle = "打开反馈页面，自行选择要提交的信息",
+        onClick = {
+            IntentUtils.openUri(XAdSkipConfig.feedbackUrlForVersion(META.versionName, META.versionCode))
+        },
+    )
+    SettingItem(
+        title = "邮件联系",
+        subtitle = "1345134186@qq.com",
+        onClick = { mainVm.openUrl(XAdSkipConfig.feedbackEmailUrl) },
+    )
 }
 

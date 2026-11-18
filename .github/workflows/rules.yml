@@ -20,6 +20,7 @@ jobs:
           node-version: '24'
       - run: python -m pip install -r tools/requirements.txt
       - run: python tools/bundle_community_rules.py --check
+      - run: python tools/build_unified_rules.py --check
       - run: python -m unittest discover -s tools -p 'test_*.py' -v
       - run: python tools/convert_ltt.py
       - run: git diff --exit-code -- rules/conversion-report.json gkd-app/src/main/assets/xadskip/ltt-drafts.json

@@ -2,9 +2,11 @@ package li.gkd.app.data.subscription
 
 import kotlinx.coroutines.CancellationException
 import li.gkd.app.data.RawSubscription
+import li.gkd.app.data.XAdSkipUnifiedMigration
 import li.gkd.app.util.LogUtils
 import li.gkd.db.Db
 import li.gkd.db.SubsItem
+import li.gkd.db.SubscriptionConfigSnapshot
 
 object SubscriptionPersistence {
     enum class DeleteStage {
@@ -43,6 +45,34 @@ object SubscriptionPersistence {
                 if (!preserveGroupConfigs) {
                     cleanupConfigs(subscription)
                 }
+            }
+        } catch (e: Throwable) {
+            restoreFile(subscription.id, previousBytes, e)
+            throw e
+        }
+    }
+
+    /** Old files/choices remain archived; the new file and DB mapping commit together. */
+    suspend fun migrateUnified(subscription: RawSubscription, plan: XAdSkipUnifiedMigration.Plan) {
+        val previousBytes = SubscriptionFileStore.readBytes(subscription.id)
+        require(previousBytes == null) { "统一规则已经存在，不能重复迁移" }
+        SubscriptionFileStore.write(subscription)
+        try {
+            Db.withTransaction {
+                val currentConfigs = SubscriptionConfigSnapshot(
+                    subsItems = Db.subsItemDao.queryAll(),
+                    appConfigs = Db.subsAppConfigDao.queryAll(),
+                    categoryConfigs = Db.subsCategoryConfigDao.queryAll(),
+                    appGroupConfigs = Db.subsAppGroupConfigDao.queryAll(),
+                    globalGroupConfigs = Db.subsGlobalGroupConfigDao.queryAll(),
+                )
+                check(currentConfigs == plan.previousConfigs) { "迁移期间用户配置已改变，保留原配置并稍后重试" }
+                require(Db.subsItemDao.queryAll().none { it.id == subscription.id })
+                Db.subsItemDao.upsert(plan.item)
+                Db.subsAppConfigDao.upsert(*plan.appConfigs.toTypedArray())
+                Db.subsAppGroupConfigDao.upsert(*plan.appGroupConfigs.toTypedArray())
+                Db.subsGlobalGroupConfigDao.upsert(*plan.globalGroupConfigs.toTypedArray())
+                Db.subsItemDao.update(*plan.archivedItems.toTypedArray())
             }
         } catch (e: Throwable) {
             restoreFile(subscription.id, previousBytes, e)

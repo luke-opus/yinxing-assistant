@@ -55,6 +55,7 @@ import li.gkd.app.ui.share.launchUi
 import li.gkd.app.util.AutomatorModeOption
 import li.gkd.app.util.LogUtils
 import li.gkd.app.data.XAdSkipConfig
+import li.gkd.app.data.XAdSkipRuleUpdater
 import li.gkd.app.util.ThrottleTimer
 import li.gkd.app.util.UpdateStatus
 import li.gkd.app.util.FolderUtils
@@ -95,6 +96,15 @@ class MainViewModel : BaseViewModel() {
             termsStepFlow.value++
         } else {
             termsAcceptedFlow.value = true
+            onAppForeground()
+        }
+    }
+
+    fun onAppForeground() {
+        if (!termsAcceptedFlow.value) return
+        updateStatus?.checkUpdate()
+        scope.launchLogged(Dispatchers.IO) {
+            XAdSkipRuleUpdater.checkOnAppOpen()
         }
     }
 
@@ -399,10 +409,6 @@ class MainViewModel : BaseViewModel() {
         scope.launchLogged(Dispatchers.IO) {
             // 每次进入删除缓存
             FolderUtils.clearCache()
-        }
-
-        if (termsAcceptedFlow.value && updateStatus?.canRecheck == true) {
-            updateStatus.checkUpdate()
         }
 
         scope.launchLogged(Dispatchers.IO) {

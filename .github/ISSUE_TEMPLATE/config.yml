@@ -1,1 +1,11 @@
 blank_issues_enabled: true
+contact_links:
+  - name: 普通使用问题与规则反馈
+    url: https://feedback.xadskip.com/
+    about: 没有跳过、误点或开启困难，可私下提交截图或短录屏；先遮盖个人信息。
+  - name: 银杏助手官网与使用说明
+    url: https://xadskip.com/#guide
+    about: 查看下载安装、无障碍开启、更新与隐私说明。
+  - name: 已有公开问题
+    url: https://github.com/luke-opus/yinxing-assistant/issues
+    about: 提交开发问题前可先查看是否已有相同报告。
