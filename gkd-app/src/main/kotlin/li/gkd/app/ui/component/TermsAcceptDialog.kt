@@ -45,7 +45,7 @@ fun TermsAcceptDialog() {
                     modifier = Modifier.fillMaxWidth(),
                     text = buildAnnotatedString {
                         append("开启后，本应用会通过无障碍服务读取屏幕内容，并按您启用的规则自动点击。您可随时在首页暂停。\n\n")
-                        append("下一步点“开启辅助”，在系统页面亲自确认授权。\n\n")
+                        append("点击“同意并前往开启”后，将打开系统授权页面，请您亲自确认开启。规则已随应用提供，无需手动导入。\n\n")
                         append("继续前，请阅读")
                         withLink(LinkAnnotation.Url(XAdSkipConfig.useNotesUrl, linkStyles)) {
                             append("使用说明")
@@ -59,8 +59,8 @@ fun TermsAcceptDialog() {
             }
         },
         confirmButton = {
-            TextButton(onClick = throttle { mainVm.acceptTermsStep(0) }) {
-                Text(text = "同意并继续")
+            TextButton(onClick = throttle { mainVm.acceptTermsAndOpenA11ySetup() }) {
+                Text(text = "同意并前往开启")
             }
         },
         dismissButton = {

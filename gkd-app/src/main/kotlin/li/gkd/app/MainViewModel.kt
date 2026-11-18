@@ -98,6 +98,11 @@ class MainViewModel : BaseViewModel() {
         }
     }
 
+    fun acceptTermsAndOpenA11ySetup() {
+        acceptTermsStep(0)
+        requestA11ySetup()
+    }
+
     val activityResults = ActivityResultRequests()
 
     private val a11ySetupController by lazy {
