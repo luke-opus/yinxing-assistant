@@ -122,6 +122,8 @@ def prop(name):
 def health(url, host=None):
     command = ["curl", "--silent", "--show-error", "--max-time", "8", "--noproxy", "*",
                "--write-out", "\n%{http_code}"]
+    if url == "http://127.0.0.1:3000/api/health":
+        command += ["--header", "Host: familyatlas.cn"]
     if host:
         command += ["--resolve", host + ":443:127.0.0.1"]
     result = run(command + [url], check=False, timeout=10)
